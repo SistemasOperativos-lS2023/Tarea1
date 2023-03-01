@@ -9,13 +9,52 @@ int 0x10
 mov ax, 0xB800
 mov es, ax ; ES:DI <-- B800:0000
 
+
+
 game_loop:
-    xor ax, ax                  ; AX is the data to store
-    xor di, di                  ; DI is the pointer
-    mov cx, 80*25               ; CX register equals to 80*25
-    rep stosw                   ; stosw stores AX into [ES:DI]and then increments DI
+    xor ax, ax
+    xor di, di
+    mov cx, 80*25
+    rep stosw
+
+    ; pintar el nombre
+    mov si, nombreD
+    mov di, 1*2
+    call video_string
     
+    ; pintar el nombre de Jason
+    mov si, nombre
+    call video_string
+
+
+
+    ; game loop
+    mov bx, [0x046C]
+    inc bx
+    inc bx
+    .delay:
+        cmp [0x046C], bx
+        jl .delay
 jmp game_loop
 
+
+video_string:
+    xor ax, ax            
+    .next_char:
+        lodsb               
+        cmp al, 0              
+        je .return              
+        mov ah, 0x0F
+        stosw             
+        jmp video_string          
+
+    .return: ret                
+
+
+
+nombreD: db 'Nombre: ', 0
+nombre: db 'Jason', 0
+
+obstaculos: db 'Obstaculos superados: ', 0
 times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
 dw 0xAA55                       ; set boot signature
