@@ -26,7 +26,25 @@ game_loop:
     mov si, nombre
     call video_string
 
+    ;Pintado nivel    
+    mov si, nivel
+    call video_string
 
+    ;Pintando el nivel actual
+    mov si, nivelN
+    call video_string
+    
+    ;Pintando Obstaculos
+    mov si, obstaculos
+    call video_string
+
+    ;Pintando Obstaculos Superados
+    mov si, obstaculosN
+    call video_string
+
+    ;Pintando los comandps de; juegos 
+    mov si, comando
+    call video_string
 
     ; game loop
     mov bx, [0x046C]
@@ -54,7 +72,10 @@ video_string:
 
 nombreD: db 'Nombre: ', 0
 nombre: db 'Jason', 0
-
-obstaculos: db 'Obstaculos superados: ', 0
+nivel: db ' Nivel:',0
+nivelN: db '1',0
+obstaculos: db ' Obstaculos: ', 0
+obstaculosN: db '123', 0
+comando: db " Comandos:P,R,^,<,>,v", 0
 times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
 dw 0xAA55                       ; set boot signature
