@@ -131,9 +131,9 @@ game_won:
     mov cx, 80*25
     rep stosw
 
-    mov si, welcome
+    mov si, win
     mov di, ROWLEN*8+54    ;160 espacios*no.linea + offset
-    call video_string
+    call color_video_string
     
     ; Delay
     mov bx, [0x046C]
@@ -201,7 +201,7 @@ color_video_string:
     .return: ret    
 
            
-
+win: db 'Ha ganado!'
 welcome: db 'Bienvenido/a a Mobile Maze!', 0
 confirmation: db 'Presione ENTER para jugar!', 0
 nombreD: db 'Nombre: ', 0
