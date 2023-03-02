@@ -11,12 +11,15 @@ mov es, ax ; ES:DI <-- B800:0000
 
 
 ;;============== CONSTANTES ==============
-KEY_ENTER		 equ 1Ch	; Keyboard scancodes...
+ROWLEN      equ 160	; 80 Character row * 2 bytes each
+KEY_ENTER   equ 1Ch	; Keyboard scancodes...
 
 
 
 ;;============== VARIABLES ==============
-drawColor: dw 0F020h
+drawColor: dw 0F0h
+
+
 
 
 initial_menu:
@@ -27,12 +30,20 @@ initial_menu:
     rep stosw
 
     mov si, welcome
-    mov di, 160*6+54    ;160 espacios*no.linea + offset
+    mov di, ROWLEN*8+54    ;160 espacios*no.linea + offset
     call video_string
 
     mov si, confirmation
-    mov di, 160*11+54   ;160 espacios*no.linea + offset
+    mov di, ROWLEN*13+54   ;160 espacios*no.linea + offset
     call video_string
+
+    mov si, vga_border
+    mov di, 0 
+    call color_video_string
+
+    mov si, vga_border
+    mov di, ROWLEN*24
+    call color_video_string
     
     ; Delay
     mov bx, [0x046C]
@@ -79,9 +90,7 @@ game_loop:
     ;Pintando el nivel actual
     mov si, nivelN
     call video_string
-    
-    add word [drawColor], 1000h		; Move to next VGA color
-    
+        
     ;Pintando Obstaculos
     mov si, obstaculos
     call video_string
@@ -105,6 +114,9 @@ game_loop:
 jmp game_loop
 
 
+
+;;=========== FUNCIONES ==========
+
 video_string:
     xor ax, ax            
     .next_char:
@@ -115,9 +127,24 @@ video_string:
         stosw             
         jmp video_string          
 
-    .return: ret                
+    .return: ret  
 
+color_video_string:
+    xor ax, ax            
+    .color_next_char:
+        lodsb               
+        cmp al, 0              
+        je .return
+        mov ah, [drawColor]
+        add byte [drawColor], 10h		; Move to next VGA color     
+        stosw   
+        jmp color_video_string          
 
+    .return: ret    
+
+           
+
+vga_border: db '                                                                                ',0
 welcome: db 'Bienvenido/a a Mobile Maze!', 0
 confirmation: db 'Presione ENTER para jugar!', 0
 nombreD: db 'Nombre: ', 0
