@@ -14,6 +14,11 @@ mov es, ax ; ES:DI <-- B800:0000
 KEY_ENTER		 equ 1Ch	; Keyboard scancodes...
 
 
+
+;;============== VARIABLES ==============
+drawColor: dw 0F020h
+
+
 initial_menu:
     ; Poner pantalla en color negro
     xor ax, ax
@@ -75,6 +80,8 @@ game_loop:
     mov si, nivelN
     call video_string
     
+    add word [drawColor], 1000h		; Move to next VGA color
+    
     ;Pintando Obstaculos
     mov si, obstaculos
     call video_string
@@ -82,6 +89,7 @@ game_loop:
     ;Pintando Obstaculos Superados
     mov si, obstaculosN
     call video_string
+
 
     ;Pintando los comandos de; juegos 
     mov si, comando
