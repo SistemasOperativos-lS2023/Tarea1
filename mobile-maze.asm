@@ -18,10 +18,8 @@ KEY_R       equ 13h
 
 
 
-
 ;;============== VARIABLES ==============
 drawColor: dw 0F0h
-vga_border: db '                                                                                ',0
 
 
 
@@ -64,7 +62,7 @@ initial_menu:
     cbw					; Zero out AH in 1 byte
     int 16h				; BIOS get keystroke, scancode in AH, character in AL
     cmp ah, KEY_ENTER	; Check what key user entered...
-    je game_won        ; Go to game
+    je game_loop        ; Go to game
 
 jmp initial_menu
 
@@ -120,28 +118,39 @@ game_loop:
         jl .delay
 
 
-     ;;if ganó: jmp game_won   
+     ;;if ganó: jmp game_won  
+
 jmp game_loop
 
 
+;;=========== PANTALLA GANE ===========
+
 game_won:
     ; Poner pantalla en color negro
-    xor ax, ax
-    xor di, di
-    mov cx, 80*25
-    rep stosw
+    ;xor ax, ax
+    ;xor di, di
+    ;mov cx, 80*25
+    ;rep stosw
 
-    mov si, win
-    mov di, ROWLEN*8+54    ;160 espacios*no.linea + offset
+    mov si, win 
+    mov di, ROWLEN*8+70    ;160 espacios*no.linea + offset
     call color_video_string
+
+    mov si, restart
+    mov di, ROWLEN*20+20
+    call video_string
+
+    mov si, exit
+    mov di, ROWLEN*20+100
+    call video_string
     
     ; Delay
-    mov bx, [0x046C]
-    inc bx
-    inc bx
-    .delay:
-        cmp [0x046C], bx
-        jl .delay
+    ;mov bx, [0x046C]
+    ;inc bx
+    ;inc bx
+    ;.delay:
+    ;    cmp [0x046C], bx
+    ;    jl .delay
 
     get_player_input:
 		;; Get Player input
@@ -200,9 +209,12 @@ color_video_string:
 
     .return: ret    
 
-           
-win: db 'Ha ganado!'
-welcome: db 'Bienvenido/a a Mobile Maze!', 0
+
+vga_border: db '                                                                                ',0                    
+win: db 'Ha ganado!',0
+restart: db 'Reiniciar el juego [R]', 0
+exit: db 'Salir al menu [ESC]', 0
+welcome: db 'Bienvenido a Mobile Maze!', 0
 confirmation: db 'Presione ENTER para jugar!', 0
 nombreD: db 'Nombre: ', 0
 nombre: db 'Jason', 0
