@@ -22,11 +22,11 @@ initial_menu:
     rep stosw
 
     mov si, welcome
-    mov di, 1330
+    mov di, 160*6+54    ;160 espacios*no.linea + offset
     call video_string
 
     mov si, confirmation
-    mov di, 1810
+    mov di, 160*11+54   ;160 espacios*no.linea + offset
     call video_string
     
     ; Delay
