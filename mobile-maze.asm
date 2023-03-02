@@ -10,8 +10,49 @@ mov ax, 0xB800
 mov es, ax ; ES:DI <-- B800:0000
 
 
+;;============== CONSTANTES ==============
+KEY_ENTER		 equ 1Ch	; Keyboard scancodes...
+
+
+initial_menu:
+    ; Poner pantalla en color negro
+    xor ax, ax
+    xor di, di
+    mov cx, 80*25
+    rep stosw
+
+    mov si, welcome
+    mov di, 1330
+    call video_string
+
+    mov si, confirmation
+    mov di, 1810
+    call video_string
+    
+    ; Delay
+    mov bx, [0x046C]
+    inc bx
+    inc bx
+    .delay:
+        cmp [0x046C], bx
+        jl .delay
+
+    ;; Get Player input
+    mov ah, 1			; BIOS get keyboard status int 16h AH 01h
+    int 16h
+    jz initial_menu	    ; No key entered, don't check, move on
+
+    cbw					; Zero out AH in 1 byte
+    int 16h				; BIOS get keystroke, scancode in AH, character in AL
+    cmp ah, KEY_ENTER	; Check what key user entered...
+    je game_loop        ; Go to game
+
+jmp initial_menu
+
+
 
 game_loop:
+    ; Poner pantalla en color negro
     xor ax, ax
     xor di, di
     mov cx, 80*25
@@ -42,7 +83,7 @@ game_loop:
     mov si, obstaculosN
     call video_string
 
-    ;Pintando los comandps de; juegos 
+    ;Pintando los comandos de; juegos 
     mov si, comando
     call video_string
 
@@ -69,7 +110,8 @@ video_string:
     .return: ret                
 
 
-
+welcome: db 'Bienvenido/a a Mobile Maze!', 0
+confirmation: db 'Presione ENTER para jugar!', 0
 nombreD: db 'Nombre: ', 0
 nombre: db 'Jason', 0
 nivel: db ' Nivel:',0
