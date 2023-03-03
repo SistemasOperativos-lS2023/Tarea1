@@ -46,15 +46,19 @@ game_loop:
     mov si, comando
     call video_string
 
+    jmp sumaUnitaria
+    prueba:
+        mov si, obstaculosSuperados
+        call video_string
+
     ; game loop
     mov bx, [0x046C]
-    inc bx
-    inc bx
+    add bx, 0x0A
     .delay:
         cmp [0x046C], bx
         jl .delay
-jmp game_loop
 
+jmp game_loop
 
 video_string:
     xor ax, ax            
@@ -68,6 +72,33 @@ video_string:
 
     .return: ret                
 
+sumaUnitaria:
+    ;xor cx, cx este xor debe de hacerse antes de hacer la primera llamada al timer
+    mov cx, [contador]
+    add cx,1
+    mov [contador], cx
+
+convertirContadorASQII:
+    mov cx, [contador]
+    cmp cx, 9
+    jg convertirAsquiiDosDigitos
+    jmp convertirAsquiiUnDigito
+
+convertirAsquiiDosDigitos:
+    mov ax, [contador]
+    mov bl, 10
+    div bl 
+    add al,48
+    add ah,48
+    mov [obstaculosSuperados], ax
+    jmp prueba 
+    
+
+convertirAsquiiUnDigito:
+    add cx, 48
+    mov [obstaculosSuperados], cx
+    jmp prueba
+
 
 
 nombreD: db 'Nombre: ', 0
@@ -76,6 +107,8 @@ nivel: db ' Nivel:',0
 nivelN: db '1',0
 obstaculos: db ' Obstaculos: ', 0
 obstaculosN: db '123', 0
-comando: db " Comandos:P,R,^,<,>,v", 0
+comando: db " Comandos:P,R,^,<,>,v Contador: ", 0
+contador dw 0 
+obstaculosSuperados dw '', 0
 times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
 dw 0xAA55                       ; set boot signature
