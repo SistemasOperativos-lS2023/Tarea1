@@ -32,21 +32,31 @@ game_loop:
     ; configure the draw wall's common values to save memory space
     mov ah, 0x30                            ; character config: bg -> 0, fg -> F, char -> 0
 
-    ; Draw wall           
-    ;mov bx, 20                              ; starting x position
-    ;mov dx, 1                               ; starting y position
-    ;mov cl, 10                              ; wall length
-    ;call draw_wall                          ; draw the wall
+    ; Draw V wall # 1          
+    mov bx, 40                              ; starting x position
+    mov dx, 1                               ; starting y position
+    mov cl, 10                              ; wall length
+    call draw_wall                          ; draw the wall
 
-    ; Draw wall
-    ;mov bx, 20                              ; starting x position
-    ;mov dx, 13                              ; starting y position
-    ;mov cl, 12                              ; wall length
-    ;call draw_wall                          ; draw the wall
+    ;Draw V wall # 2
+    mov bx, 40                              ; starting x position
+    mov dx, 14                              ; starting y position
+    mov cl, 11                              ; wall length
+    call draw_wall                          ; draw the wall
 
+    ; Draw V wall # 3
+    mov bx, 100                             ; starting x position
+    mov dx, 3                               ; starting y position
+    mov cl, 22                              ; wall length
+    call draw_wall                          ; draw the wall
 
+    ; Draw V wall # 4
+    mov bx, 156                             ; starting x position
+    mov dx, 0                               ; starting y position
+    mov cl, 23                              ; wall length
+    call draw_wall                          ; draw the wall
 
-; Draw the player on screen
+    ; Draw the player on screen
     mov ah, 0x0F0                           ; character config: bg -> 0, fg -> F, char -> 0
     imul di, [playerY], 160                                     
     add di, [playerX]
@@ -55,7 +65,7 @@ game_loop:
     add di, 2*80-4
 
 
-; get player input
+    ; get player input
     mov ah, 1                               ; BIOS get keyboard status
     int 0x16                                ; systemcall
     jz move_player                            ; No key entered, don't check, move on
@@ -99,38 +109,70 @@ game_loop:
         mov byte [playerSpeedX], -4         ; inverti direction of movement
         jmp move_player                     ; move the player
 
-;; Move the player
-move_player:
-    mov bl, [playerSpeedX]                  ; laod the X speed into BL register
-    add [playerX], bl                       ; add the X speed to the player X position
-    
-    mov bl, [playerSpeedY]                  ; load the Y speed into BL register
-    add [playerY], bl                       ; add the Y speed to the player Y position
+    ;; Move the player
+    move_player:
+        mov bl, [playerSpeedX]               ; laod the X speed into BL register
+        add [playerX], bl                    ; add the X speed to the player X position
+        
+        mov bl, [playerSpeedY]               ; load the Y speed into BL register
+        add [playerY], bl                    ; add the Y speed to the player Y position
 
-;; check top collision
-check_top_collision:
-    cmp word [playerY], 1                   ; compare player Y position with 1
-    jg check_bottom_collision               ; if player Y position is greater than 1, continue the check
-    neg byte [playerSpeedY]                 ; otherwise, invert the player Y direction
+    ;; check top collision
+    check_top_collision:
+        cmp word [playerY], 1                ; compare player Y position with 1
+        jg check_bottom_collision            ; if player Y position is greater than 1, continue the check
+        neg byte [playerSpeedY]              ; otherwise, invert the player Y direction
 
-;; check bottom collision
-check_bottom_collision:
-    cmp word [playerY], 24                  ; compare player Y position with 24
-    jl check_left_collision                 ; if player Y position is less than 24, continue the check
-    neg byte [playerSpeedY]                 ; otherwise, invert the player Y direction
+    ;; check bottom collision
+    check_bottom_collision:
+        cmp word [playerY], 24               ; compare player Y position with 24
+        jl check_left_collision              ; if player Y position is less than 24, continue the check
+        neg byte [playerSpeedY]              ; otherwise, invert the player Y direction
 
-;; check left collision
-check_left_collision:
-    cmp word [playerX], 2                   ; compare player X position with 2
-    jg check_right_collision                ; if player X position is greater than 2, continue the check
-    mov byte [playerSpeedX], 4              ; otherwise, invert the player X direction
+    ;; check left collision
+    check_left_collision:
+        cmp word [playerX], 2                ; compare player X position with 2
+        jg check_right_collision             ; if player X position is greater than 2, continue the check
+        mov byte [playerSpeedX], 4           ; otherwise, invert the player X direction
 
-;; check right collision
-;; This is the winning level checkpoint
-check_right_collision:
-    cmp word [playerX], 154                 ; compare player X position with 2
-    jl game_tick                            ; if player X position is less than 154, continue to game_tick
-    mov byte [playerSpeedX], -4             ; otherwise, invert the player X direction
+    ;; check right collision
+    ;; This is the winning level checkpoint
+    check_right_collision:
+        cmp word [playerX], 154              ; compare player X position with 2
+        jl check_walls_collision             ; if player X position is less than 154, continue to game_tick
+        mov byte [playerSpeedX], -4          ; otherwise, invert the player X direction
+
+
+;; procedure to check collision with a specific wallW
+;; providing the wall x position, y position, and wall length
+;; AL register: 1 is the wall is up, 0 is wall is down
+;; BX register: The wall x position
+;; Cx register: The wall length
+
+check_walls_collision:
+    ;; check collision with V wall # 1
+    mov al, 1
+    mov bx, 40
+    mov cx, 11-1
+    call wall_collision_stage_1
+
+    ;; check collision with V wall # 2
+    mov al, 0
+    mov bx, 40
+    mov cx, 14
+    call wall_collision_stage_1
+
+    ;; check collision with V wall # 3
+    mov al, 0
+    mov bx, 100
+    mov cx, 3
+    call wall_collision_stage_1
+
+    ;; check collision with V wall # 4
+    mov al, 1
+    mov bx, 156
+    mov cx, 23-1
+    call wall_collision_stage_1
 
 ;; game delay time before rendering the screen's content again
 game_tick:
@@ -159,7 +201,7 @@ video_string:
 .return: ret                                 ; return from procedure             
 
 
-;; Draw wall procedure
+;; Draw wall procedure -----------------------------------------------------------------------------------
 ;; arguments: AH register, BH register, DX register, CH register
 ;; AH register: The charcter config --> bg:fg:char
 ;; BX register: The wall x position
@@ -176,11 +218,40 @@ draw_wall:
 ret
 
 
+;; wall collision procedure ------------------------------------------------------------------------------
+;; providing the wall x position, y position, and wall length
+;; AL register: 1 is the wall is up, 0 is wall is down
+;; BX register: The wall x position
+;; CX register: wall y position if AL is 0, wall (y position + length - 1) if AL is 1
+wall_collision_stage_1:
+    cmp word [playerX], bx                  ; player x position is the same as wall x position
+    je  wall_collision_stage_2              ; go check if player y is on the wall's y position range
+    jmp return_wall_collision               ; if not, return from the procedure
+
+wall_collision_stage_2:
+    cmp al, 1                               ; is the wall above??
+    je  wall_collision_upY                  ; check up condition
+
+wall_collision_downY:
+    cmp word [playerY], cx                  ; compare the player y position with the wall length
+    jl return_wall_collision                ; if player is above the wall's y position, then return
+    jmp kill_player                         ; otherwise, game over               
+
+wall_collision_upY:
+    cmp word [playerY], cx                  ; compare the player y position with the wall length
+    jg  return_wall_collision               ; if player is under the wall's y position, then return
+
+kill_player:
+    mov byte [playerSpeedX], 0              ; disable player speed
+    mov byte [playerX], 4                   ; reset the player's x position
+
+return_wall_collision:
+    ret                                     ; return of the procedure
 
 
 ;; variables --------------------------------------------------------------------------------------------
 playerY: dw 10                               ; starting y position for the player
-playerX: dw 2                               ; starting x position for the player
+playerX: dw 4                                ; starting x position for the player
 playerSpeedX: db 0
 playerSpeedY: db 0
 
