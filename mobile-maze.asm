@@ -1,6 +1,5 @@
 [bits 16]                       ; Tell nasm to assemble 16 bit code
 [org 0x7C00]                    ; Tell nasm the code is running at boot sector
-
 ; set up video mode
 mov ax, 0x003                   ; Set video mode BIOS interrupt 0x10 AH = 0x00, AL = 0x03
 int 0x10
@@ -44,16 +43,17 @@ game_loop:
     mov si, comando
     call video_string
 
+    ;Se llama a la funcion de suma unitaria 
     jmp sumaUnitaria
+    ;Se pinta el numero actualmente es un cronometro
     prueba:
-        mov si, obstaculosSuperados
+        mov si, cronometro;
         call video_string
 
     ; game loop
     mov bx, [0x046C]
     inc bx
     inc bx
-
     .delay:
         cmp [0x046C], bx
         jl .delay
@@ -72,13 +72,14 @@ video_string:
 
     .return: ret                
 
+;Se realiza una suma unitaria la cual, nos permite el control de la variable cronometro
 sumaUnitaria:
     mov cx, [control]
     add cx,1
     mov [control],cx
     cmp cx,9
     jl prueba
-    
+;Se realiza una fucnion para convertir el control del cronometro
 convertirContadorASQII:
     mov cx,0
     mov [control],cx 
@@ -89,19 +90,21 @@ convertirContadorASQII:
     jg convertirAsquiiDosDigitos
     jmp convertirAsquiiUnDigito
 
+;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
 convertirAsquiiDosDigitos:
     mov ax, [contador]
     mov bl, 10
     div bl
     add al,48
     add ah,48
-    mov [obstaculosSuperados], ax
+    mov [cronometro], ax
     jmp prueba 
     
+;Si el valor de contador es menor a 9 y  1 digitos
 
 convertirAsquiiUnDigito:
     add cx, 48
-    mov [obstaculosSuperados], cx
+    mov [cronometro], cx
     jmp prueba
 
 
@@ -117,6 +120,6 @@ obstaculosN: db '123', 0
 comando: db " Comandos:P,R,^,<,>,v Contador: ", 0
 control dw 0
 contador dw 0 
-obstaculosSuperados dw '', 0
+cronometro dw '', 0
 times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
 dw 0xAA55                       ; set boot signature
