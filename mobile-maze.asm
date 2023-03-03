@@ -9,8 +9,6 @@ int 0x10
 mov ax, 0xB800
 mov es, ax ; ES:DI <-- B800:0000
 
-
-
 game_loop:
     xor ax, ax
     xor di, di
@@ -53,7 +51,9 @@ game_loop:
 
     ; game loop
     mov bx, [0x046C]
-    add bx, 0x0A
+    inc bx
+    inc bx
+
     .delay:
         cmp [0x046C], bx
         jl .delay
@@ -73,13 +73,18 @@ video_string:
     .return: ret                
 
 sumaUnitaria:
-    ;xor cx, cx este xor debe de hacerse antes de hacer la primera llamada al timer
-    mov cx, [contador]
+    mov cx, [control]
     add cx,1
-    mov [contador], cx
-
+    mov [control],cx
+    cmp cx,9
+    jl prueba
+    
 convertirContadorASQII:
+    mov cx,0
+    mov [control],cx 
     mov cx, [contador]
+    add cx, 1
+    mov [contador], cx
     cmp cx, 9
     jg convertirAsquiiDosDigitos
     jmp convertirAsquiiUnDigito
@@ -87,7 +92,7 @@ convertirContadorASQII:
 convertirAsquiiDosDigitos:
     mov ax, [contador]
     mov bl, 10
-    div bl 
+    div bl
     add al,48
     add ah,48
     mov [obstaculosSuperados], ax
@@ -101,6 +106,8 @@ convertirAsquiiUnDigito:
 
 
 
+
+
 nombreD: db 'Nombre: ', 0
 nombre: db 'Jason', 0
 nivel: db ' Nivel:',0
@@ -108,6 +115,7 @@ nivelN: db '1',0
 obstaculos: db ' Obstaculos: ', 0
 obstaculosN: db '123', 0
 comando: db " Comandos:P,R,^,<,>,v Contador: ", 0
+control dw 0
 contador dw 0 
 obstaculosSuperados dw '', 0
 times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
