@@ -19,7 +19,7 @@ KEY_R       equ 13h
 
 
 ;;============== VARIABLES ==============
-drawColor: dw 0F0h
+drawColor: dw 0F020h
 
 
 
@@ -38,18 +38,24 @@ initial_menu:
     mov di, ROWLEN*13+54   ;160 espacios*no.linea + offset
     call video_string
 
-    mov si, vga_border
-    mov di, 0 
-    call color_video_string
-
-    mov si, vga_border
-    mov di, ROWLEN*24
-    call color_video_string
+    ;; Draw color borders
+	mov ax, [drawColor]	; White bg, black fg
+	mov di, 0			; Start at 0
+    mov bx, ROWLEN*24
+	mov cl, 40			; cl # of times
+	.draw_borders_loop:
+		stosw
+        add word [drawColor], 1000h		; Move to next VGA color
+        mov ax, [drawColor]	            ; White bg, black fg  
+        mov [es:di], ax   
+        mov [es:bx], ax   
+		add di, 2		                ; Move 2
+        add bx, 4
+		loop .draw_borders_loop	        ; Loops cl # of times
     
     ; Delay
     mov bx, [0x046C]
-    inc bx
-    inc bx
+    add bx, 0x0a
     .delay:
         cmp [0x046C], bx
         jl .delay
@@ -62,7 +68,7 @@ initial_menu:
     cbw					; Zero out AH in 1 byte
     int 16h				; BIOS get keystroke, scancode in AH, character in AL
     cmp ah, KEY_ENTER	; Check what key user entered...
-    je game_loop        ; Go to game
+    je game_won        ; Go to game
 
 jmp initial_menu
 
@@ -127,10 +133,10 @@ jmp game_loop
 
 game_won:
     ; Poner pantalla en color negro
-    ;xor ax, ax
-    ;xor di, di
-    ;mov cx, 80*25
-    ;rep stosw
+    xor ax, ax
+    xor di, di
+    mov cx, 80*25
+    rep stosw
 
     mov si, win 
     mov di, ROWLEN*8+70    ;160 espacios*no.linea + offset
@@ -145,12 +151,11 @@ game_won:
     call video_string
     
     ; Delay
-    ;mov bx, [0x046C]
-    ;inc bx
-    ;inc bx
-    ;.delay:
-    ;    cmp [0x046C], bx
-    ;    jl .delay
+    mov bx, [0x046C]
+    add bx, 0x0b
+    .delay:
+        cmp [0x046C], bx
+        jl .delay
 
     get_player_input:
 		;; Get Player input
@@ -210,7 +215,6 @@ color_video_string:
     .return: ret    
 
 
-vga_border: db '                                                                                ',0                    
 win: db 'Ha ganado!',0
 restart: db 'Reiniciar el juego [R]', 0
 exit: db 'Salir al menu [ESC]', 0
