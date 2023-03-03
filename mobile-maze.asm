@@ -221,7 +221,7 @@ nombre: db 'Jason', 0
 nivel: db ' Nivel:',0
 nivelN: db '1',0
 obstaculos: db ' Obstaculos: ', 0
-obstaculosN: db '123', 0
+obstaculosN: db 0, 0
 comando: db " Comandos: P,R,^,<,>,v", 0
 times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
 dw 0xAA55                       ; set boot signature
