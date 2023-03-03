@@ -1,4 +1,5 @@
 all:
-	nasm -f bin mobile-maze.asm -o mobile-maze.img
-	qemu-system-i386 -drive file=mobile-maze.img,index=0,media=disk,format=raw
-	rm -f mobile-maze.img
+	nasm -f bin mobile-maze.asm -o mobile-maze.bin
+	qemu-system-i386 -drive file=mobile-maze.bin,index=0,media=disk,format=raw
+	xxd mobile-maze.bin
+	rm -f mobile-maze.bin
