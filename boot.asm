@@ -1,3 +1,6 @@
+;==========================
+;        BOOTLOADER
+;==========================
 org 0x7C00 			; Tell nasm the code is running at boot sector
 
 initialize:
@@ -22,11 +25,10 @@ boot:
     mov ch, 0 			; Cylinder number
     mov dh, 0 			; Head number
     mov cl, 2 			; Sector number
-    ;mov dl, 0x80 		; Boot drive number
-    mov bx, 0x8000 		; Load sector into address 0x8000
+    mov bx, 0x7E00 		; Load sector into address 0x8000
     int 0x13 			; Interrupt BIOS
    
-    jmp 0:0x8000		; Go to the initial page 
+    jmp 0:0x7E00		; Go to the initial page 
 
 
 times 446-($-$$) db 0
@@ -39,3 +41,5 @@ db 0x02, 0x00, 0x00, 0x00 ; number of sectors
 
 times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
 dw 0xAA55                       ; set boot signature
+
+
