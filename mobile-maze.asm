@@ -80,64 +80,65 @@ sumarObstaculos:
     mov [obstaculosSuperados],cl ;Se guarda en memoria el valor decimal de los obstaculos superados
 
 obstaculosSuperadosConversionASQUII:
-    mov cx, [obstaculosSuperados] ;
-    cmp cx, 9 ;
-    jg convertirAsquiiDosDigitos ;
-    jmp convertirAsquiiUnDigito ;
+    mov cx, [obstaculosSuperados] ;Se guardad el valor actual de los obstaculos superados
+    cmp cx, 9 ;Se compara con nuevo
+    jg convertirAsquiiDosDigitos ;En caso de que cx sea mayot a nueve se hace un salto para crear asquii para el valor de obstaculos superados
+    jmp convertirAsquiiUnDigito ;En caso que cx, se igual o menor a nueve saltamos a cerar un asquii para los osbtaculos superados
 
 
 ;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
 convertirObstaculosAsquiiDosDigitos:
-    mov ax, [obstaculosSuperados]
-    mov bl, 10
+    mov ax, [obstaculosSuperados] ;Guardamos el valor de los obstaculos superados en ax
+    mov bl, 10 ;Dividimos entre 10 el bl
     div bl
-    add al,48
-    add ah,48
-    mov [obstaculosSuperadosAsquii], ax
+    add al,48 ;Se le suma 48 al cociente de la salida de la division
+    add ah,48 ;Se le suma 48 al resultado de la division 
+    mov [obstaculosSuperadosAsquii], ax ;Se guarda el valor de cx en osbtaculos superados
     
 ;Si el valor de contador es menor a 9 y  1 digitos
 convertirObstaculosAsquiiUnDigito:
-    add cx, 48
-    mov [obstaculosSuperadosAsquii], cx
+    add cx, 48 ; Se le suma  48 a cx
+    mov [obstaculosSuperadosAsquii], cx ;Se guarda el valor de cx en osbtaculos superados
 
 
 ;Se realiza una suma unitaria la cual, nos permite el control de la variable cronometro
 restaUnitariaCronometro:
-    mov cx, [controlTiempo]
-    add cx,1
-    mov [controlTiempo],cx
-    cmp cx,9
-    jl prueba
+    mov cx, [controlTiempo] ; Se guarda en en cx el controlador del tiempo
+    add cx,1 ;Se le suma uno
+    mov [controlTiempo],cx ; Se guarda en control de tiempo 
+    cmp cx,9 ;Compara los datos con bueve
+    jl prueba ; Hace un salto cuando cx es igual a nueve
 
 ;Se realiza una fucnion para convertir el control del cronometro
 convertirContadorASQII:
-    mov cx,0
-    mov [controlTiempo],cx 
-    mov cx, [contadorCronometro]
-    sub cx, 1
-    mov [contadorCronometro], cx
-    cmp cx, 9
-    jg convertirAsquiiDosDigitos
-    jmp convertirAsquiiUnDigito
+    mov cx,0 ;Se reinicia valor de cx
+    mov [controlTiempo],cx ;El control de tiempo se devuelve a 0
+    mov cx, [contadorCronometro] ;Se guarda el valor de contador de tiempo
+    sub cx, 1 ;Se le resta uno 
+    mov [contadorCronometro], cx ;El se suma uno al contador cronometro
+    cmp cx, 9 ; Se compara el valor de cx con 9 
+    jg convertirAsquiiDosDigitos ;Si es mayor a nueve salta a convertir valor de dos digitos
+    jmp convertirAsquiiUnDigito ;Si es menor o o igual a nueve salta a ASQUII de un digito
 
 
 ;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
 convertirAsquiiDosDigitos:
-    mov ax, [contadorCronometro]
-    mov bl, 10
+    mov ax, [contadorCronometro] ;Se guarda el valor de contador cronometro 
+    mov bl, 10 ; Se divide el valor de ax en 10
     div bl
-    add al,48
-    add ah,48
-    mov [cronometro], ax
-    jmp prueba 
+    add al,48 ;Se le suma 48 al residuo de la division
+    add ah,48 ;Se le suma 48 al resultado de la division
+    mov [cronometro], ax; Se el valor de ax cronometro
+    jmp prueba ;Se hace una salto a prueba
     
 ;Si el valor de contador es menor a 9 y  1 digitos
 convertirAsquiiUnDigito:
-    add cx, 48
-    mov [cronometro], cx
-    jmp prueba
+    add cx, 48 ;Se le suma 48 al valor de cx
+    mov [cronometro], cx ;Se guarda el valor de cxx
+    jmp prueba ; Se hace una salto a prueba
 
 
+; Variables utilizadas para guardar en memoria 
 nombreD: db 'Nombre: ', 0
 nombre: db 'Jason', 0
 nivel: db ' Nivel:',0
