@@ -1,95 +1,146 @@
-[bits 16]                       ; Tell nasm to assemble 16 bit code
-[org 0x7C00]                    ; Tell nasm the code is running at boot sector
-
-; set up video mode
-mov ax, 0x003                   ; Set video mode BIOS interrupt 0x10 AH = 0x00, AL = 0x03
-int 0x10
-
-; set up video memory
-mov ax, 0xB800
-mov es, ax ; ES:DI <-- B800:0000
-
-
-;;============== CONSTANTES ==============
-ROWLEN      equ 160	; 80 Character row * 2 bytes each
-KEY_ENTER   equ 1Ch	; Keyboard scancodes...
-KEY_ESC     equ 01h	
-KEY_R       equ 13h
+[bits 16]                                    ; Tell nasm to assemble 16 bit code
+[org 0x8200]                                 ; Tell nasm the code is running at boot sector
 
 
 
-;;============== VARIABLES ==============
-drawColor: dw 0F020h
+mov ax, 0                                   ; set ACCUMULATOR REGISTER to 0
+mov ds, ax                                  ; set DATA SEGMENT to 0
+mov es, ax                                  ; set EXTRA SEGMENT to 0
+
+;; constants --------------------------------------------------------------------------------------------
+KEY_W equ 0x11                              ; scancode for the W key                         
+KEY_S equ 0x1F                              ; scancode for the S key
+KEY_A equ 0x1E                              ; scancode for the A key
+KEY_D equ 0x20                              ; scancode for the D key
+KEY_L equ 0x26                              ; scancode for the L key
+KEY_R equ 0x13
+;; set up video mode ------------------------------------------------------------------------------------
+mov ax, 0x003                               ; Set video mode BIOS interrupt 0x10 AH = 0x00, AL = 0x03
+int 0x10                                    ; systemcall
+
+; set up video memory -----------------------------------------------------------------------------------
+mov ax, 0xB800                              ; load the video memory address into AX register
+mov es, ax                                  ; move the video memory address into ES register
 
 
-
-initial_menu:
-    ; Poner pantalla en color negro
-    xor ax, ax
-    xor di, di
-    mov cx, 80*25
-    rep stosw
-
-    mov si, welcome
-    mov di, ROWLEN*8+54    ;160 espacios*no.linea + offset
-    call video_string
-
-    mov si, confirmation
-    mov di, ROWLEN*13+54   ;160 espacios*no.linea + offset
-    call video_string
-
-    ;; Draw color borders
-	mov ax, [drawColor]	; White bg, black fg
-	mov di, 0			; Start at 0
-    mov bx, ROWLEN*24
-	mov cl, 40			; cl # of times
-	.draw_borders_loop:
-		stosw
-        add word [drawColor], 1000h		; Move to next VGA color
-        mov ax, [drawColor]	            ; White bg, black fg  
-        mov [es:di], ax   
-        mov [es:bx], ax   
-		add di, 2		                ; Move 2
-        add bx, 4
-		loop .draw_borders_loop	        ; Loops cl # of times
-    
-    ; Delay
-    mov bx, [0x046C]
-    add bx, 0x0a
-    .delay:
-        cmp [0x046C], bx
-        jl .delay
-
-    ;; Get Player input
-    mov ah, 1			; BIOS get keyboard status int 16h AH 01h
-    int 16h
-    jz initial_menu	    ; No key entered, don't check, move on
-
-    cbw					; Zero out AH in 1 byte
-    int 16h				; BIOS get keystroke, scancode in AH, character in AL
-    cmp ah, KEY_ENTER	; Check what key user entered...
-    je game_won        ; Go to game
-
-jmp initial_menu
-
-
-;;============= LOOP DEL JUEGO =============
-
+;; game loop for the game renderization -----------------------------------------------------------------
 game_loop:
-    ; Poner pantalla en color negro
-    xor ax, ax
-    xor di, di
-    mov cx, 80*25
-    rep stosw
+    ; clear the screen with black
+    mov ax, 0xFFFF                          ; set up a white background and black foreground
+    xor di, di                              ; clear the DI register
+    mov cx, 80*25                           ; set up the number of repetitions
+    rep stosw                               ; put AX into [es:di] and increment DI
 
-    ; pintar el nombre
-    mov si, nombreD
-    mov di, ROWLEN*1+4
-    call video_string
+    ; print a string
+    mov si, nombre                          ; load string's first index from memory
+    mov di, 2                               ; indicate the position on screen
+    call video_string                       ; print the string
+
+    ; configure the draw wall's common values to save memory space
+    mov ah, 0x30                            ; character config: bg -> 0, fg -> F, char -> 0
+
+    ; Draw V wall # 1          
+    mov bx, 40                              ; starting x position for v wall #1 and #2
+    mov dx, 1                               ; starting y position
+    mov cl, 10                              ; wall length
+    call draw_wall                          ; draw the wall
+
+    ;Draw V wall # 2
+    mov dx, 14                              ; starting y position
+    mov cl, 11                              ; wall length
+    call draw_wall                          ; draw the wall
+
+    ; Draw V wall # 3
+    mov bx, 80                             ; starting x position
+    mov dx, 3                               ; starting y position
+    mov cl, 22                              ; wall length
+    call draw_wall                          ; draw the wall
+
+    ; Draw V wall # 4
+    mov bx, 120                             ; starting x position
+    mov dx, 1                               ; starting y position
+    mov cl, 22                              ; wall length
+    call draw_wall                          ; draw the wall
+
+    ; Draw V wall # 5
+    mov bx, 156                             ; starting x position
+    mov dx, 3                               ; starting y position
+    mov cl, 22                              ; wall length
+    call draw_wall                          ; draw the wall
+
+    ; Draw the player on screen
+    mov ah, 0x010                           ; character config: bg -> 0, fg -> F, char -> 0
+    imul di, [playerY], 160                 ; set player y position                                     
+    add di, [playerX]                       ; set player x position                  
+    stosw                                   ; move AX into [es:di] and increment DI
+    stosw                                   ; move AX into [es:di] and increment DI
+    add di, 2*80-4                          ; move a row down
+
+
+    ; get player input
+    mov ah, 1                               ; BIOS get keyboard status
+    int 0x16                                ; systemcall
+    jz move_player                            ; No key entered, don't check, move on
+
+    mov ah, 0                               ; BIOS set up for key pressed interrupt
+    int 0x16                                ; systemcall           
+
+    cmp ah, KEY_W                           ; W key pressed
+    je player_up                            ; process player up                      
+
+    cmp ah, KEY_S                           ; S key pressed
+    je player_down                          ; process player down
+
+    cmp ah, KEY_D                           ; D key pressed
+    je player_right                         ; process player right
+
+    cmp ah, KEY_A                           ; A key pressed
+    je player_left                          ; process player left
+
+    cmp ah, KEY_L                           ; L key pressed
+    je pause_game                           ; process pause game
+
+    cmp ah, KEY_R                           ; R key pressed
+    je restart_game                         ; process restart game
+               
+    ;; after the W key is pressed
+    player_up:
+        mov byte [playerSpeedX], 0          ; reset player movement in X axis
+        mov byte [playerSpeedY], -1         ; invert direction of movement
+        jmp move_player                     ; move the player
+
+    ;; after the S key is pressed 
+    player_down:
+        mov byte [playerSpeedX], 0          ; reset player movement in X axis
+        mov byte [playerSpeedY], 1          ; inverti direction of movement
+        jmp move_player                     ; move the player
+
+    ;; after the D key is pressed
+    player_right:
+        mov byte [playerSpeedY], 0          ; reset player movement in Y axis
+        mov byte [playerSpeedX], 4          ; inverti direction of movement
+        jmp move_player                     ; move the player
+
+    ;; after the D key is pressed
+    player_left:
+        mov byte [playerSpeedY], 0          ; reset player movement in Y axis
+        mov byte [playerSpeedX], -4         ; inverti direction of movement
+        jmp move_player                     ; move the player
+
+
+    ;; reatart the game
+    restart_game:
+        mov byte [playerSpeedX], 0
+        mov byte [playerSpeedY], 0
+        mov word [playerX], 4
+        mov word [playerY], 10
     
-    ; pintar el nombre de Jason
-    mov si, nombre
-    call video_string
+        mov ax, 0X7E0                   ; init the segment
+        mov es, ax                      ; init EXTRA SEGMENT register
+        mov bx, 0                       ; init local offset within the segment
+        mov cl, 2                       ; sector 2 on USB flash drive containing the start menu
+        call read_sector                ; read sector from USB flash drive
+        jmp 0x7E0:0x0000                ; jump to rhe shell executable and run it
 
     ;Pintado nivel    
     mov si, nivel
@@ -105,127 +156,181 @@ game_loop:
     mov si, obstaculos
     call video_string
 
-    ;Pintando Obstaculos Superados
-    mov si, obstaculosN
-    call video_string
 
+    ;; pause game
+    pause_game:
+        neg byte [is_game_paused]           ; negates the is_game_paused_flag
+        
+    ;; Move the player
+    move_player:
+        cmp byte [is_game_paused], 1        ; is_game_paused equals to 1??           
+        je game_tick                        ; if yes, pause the game
+        mov bl, [playerSpeedX]              ; laod the X speed into BL register
+        add [playerX], bl                   ; add the X speed to the player X position
+        
+        mov bl, [playerSpeedY]              ; load the Y speed into BL register
+        add [playerY], bl                   ; add the Y speed to the player Y position
 
-    ;Pintando los comandos de; juegos
-    mov di, ROWLEN*4+2 
-    mov si, comando
-    call video_string
+    ;; check top collision
+    check_top_collision:
+        cmp word [playerY], 1               ; compare player Y position with 1
+        jg check_bottom_collision           ; if player Y position is greater than 1, continue the check
+        neg byte [playerSpeedY]             ; otherwise, invert the player Y direction
 
-    ; game loop
-    mov bx, [0x046C]
-    inc bx
-    inc bx
+    ;; check bottom collision
+    check_bottom_collision:
+        cmp word [playerY], 24              ; compare player Y position with 24
+        jl check_left_collision             ; if player Y position is less than 24, continue the check
+        neg byte [playerSpeedY]             ; otherwise, invert the player Y direction
+
+    ;; check left collision
+    check_left_collision:
+        cmp word [playerX], 2               ; compare player X position with 2
+        jg check_right_collision            ; if player X position is greater than 2, continue the check
+        mov byte [playerSpeedX], 4          ; otherwise, invert the player X direction
+
+    ;; check right collision
+    ;; This is the winning level checkpoint
+    check_right_collision:
+        cmp word [playerX], 154             ; compare player X position with 2
+        jl check_v_walls_collision          ; if player X position is less than 154, continue to game_tick
+        mov byte [playerSpeedX], -4         ; otherwise, invert the player X direction
+
+;; check if player is colliding with any of the walls placed at the screen
+check_v_walls_collision:
+    ;; check collision with V wall # 1
+    mov al, 1                               ; it is an upper wall
+    mov bx, 40                              ; wall's x position
+    mov cx, 11-1                            ; wall's length
+    call v_wall_collision_stage_1           ; check collision
+
+    ;; check collision with V wall # 2
+    mov al, 0                               ; it is a lower wall
+    mov bx, 40                              ; wall's x position
+    mov cx, 14                              ; wall's y start position
+    call v_wall_collision_stage_1           ; check collision
+
+    ;; check collision with V wall # 3
+    mov al, 0                               ; it is a lower wall
+    mov bx, 80                              ; wall's x position
+    mov cx, 3                               ; wall's y start position
+    call v_wall_collision_stage_1           ; check collision
+
+    ;; check collision with V wall # 4
+    mov al, 1                               ; it is an upper wall
+    mov bx, 120                             ; wall's x position
+    mov cx, 23-1                            ; wall's length
+    call v_wall_collision_stage_1           ; check collision
+
+    ;; check collision with V wall # 5
+    mov al, 0                               ; it is lower wall
+    mov bx, 156                             ; wall's x position
+    mov cx, 3                               ; wall's y start position
+    call v_wall_collision_stage_1           ; check collision 
+
+;; game delay time before rendering the screen's content again
+game_tick:
+    mov bx, [0x046C]                        ; load the BIOS timer value into BX
+    inc bx                                  ; increment BX register
+    inc bx                                  ; increment BX register
     .delay:
-        cmp [0x046C], bx
-        jl .delay
+        cmp [0x046C], bx                    ; compare if the tick has reached the incremented value
+        jl .delay                           ; if not, delay
 
+jmp game_loop                               ; repeat the game loop                 
+;; end of game loop --------------------------------------------------------------------------------------
 
-     ;;if ganó: jmp game_won  
-
-jmp game_loop
-
-
-;;=========== PANTALLA GANE ===========
-
-game_won:
-    ; Poner pantalla en color negro
-    xor ax, ax
-    xor di, di
-    mov cx, 80*25
-    rep stosw
-
-    mov si, win 
-    mov di, ROWLEN*8+70    ;160 espacios*no.linea + offset
-    call color_video_string
-
-    mov si, restart
-    mov di, ROWLEN*20+20
-    call video_string
-
-    mov si, exit
-    mov di, ROWLEN*20+100
-    call video_string
-    
-    ; Delay
-    mov bx, [0x046C]
-    add bx, 0x0b
-    .delay:
-        cmp [0x046C], bx
-        jl .delay
-
-    get_player_input:
-		;; Get Player input
-		mov ah, 1			; BIOS get keyboard status int 16h AH 01h
-		int 16h
-		jz game_won		; No key entered, don't check, move on
-
-		cbw					; Zero out AH in 1 byte
-		int 16h				; BIOS get keystroke, scancode in AH, character in AL
-			
-		cmp ah, KEY_ESC		; Check what key user entered...
-		je esc_pressed
-		cmp ah, KEY_R
-		je r_pressed
-
-		jmp game_won		; Otherwise user entered some other key, move on, don't worry about it
-
-	;; Salir --> ir al menú inicial
-	esc_pressed:
-		jmp initial_menu
-
-	;; Reset game to initial state
-	r_pressed:
-        jmp game_loop   ;(?)
-		;int 19h			; Reloads the bootsector (in QEMU)
-
-jmp game_won
-
-
-
-
-;;=========== FUNCIONES ==========
-
+;; Video string procedure --------------------------------------------------------------------------------
+;; arguments: SI register, DI register
+;; SI register: The pointer to the string starting address
+;; DI register: The place (times 2 bytes) where you want to start placing the first char on screen 
 video_string:
-    xor ax, ax            
-    .next_char:
-        lodsb               
-        cmp al, 0              
-        je .return              
-        mov ah, 0x0F
-        stosw             
-        jmp video_string          
+    lodsb                                   ; put the charcter from SI into AL              
+    cmp al, 0                               ; is the current char the end of the string????             
+    je .return                              ; if true, then return     
+    mov ah, 0xF0                            ; otherwise, set up the character set up
+    stosw                                   ; put AX into [es:di] and increment DI                                    
+    jmp video_string                        ; continue with the next char from the string                      
+.return: ret                                ; return from procedure             
 
-    .return: ret  
+;; Draw wall procedure -----------------------------------------------------------------------------------
+;; arguments: AH register, BH register, DX register, CH register
+;; AH register: The charcter config --> bg:fg:char
+;; BX register: The wall x position
+;; DX register: The wall y position
+;; CL register: The wall legth or width
+;; [wall direction]: 1 is the wall is vertical and 0 if the wall is horizontal
+ 
+draw_wall:
+    imul di, dx, 160                        ; set the wall's Y posotion from DX register                                            
+    add di, bx                              ; add the wall's X position                             
+.draw_v_wall_loop:
+    stosw                                   ; put AX into [es:di] and increment DI                         
+    stosw                                   ; put AX into [es:di] and increment DI                         
+    add di, 2*80-4                          ; move a row down
+    loop .draw_v_wall_loop                  ; repeat CX times
+    ret                                     ; return
 
-color_video_string:
-    xor ax, ax            
-    .color_next_char:
-        lodsb               
-        cmp al, 0              
-        je .return
-        mov ah, [drawColor]
-        add byte [drawColor], 10h		; Move to next VGA color     
-        stosw   
-        jmp color_video_string          
+;; wall collision procedure ------------------------------------------------------------------------------
+;; providing the wall x position, y position, and wall length
+;; AL register: 1 is the wall is up, 0 is wall is down
+;; BX register: The wall x position
+;; CX register: wall y position if AL is 0, wall (y position + length - 1) if AL is 1
+v_wall_collision_stage_1:
+    cmp word [playerX], bx                  ; player x position is the same as wall x position
+    je  v_wall_collision_stage_2            ; go check if player y is on the wall's y position range
+    jmp return_wall_collision               ; if not, return from the procedure
 
-    .return: ret    
+v_wall_collision_stage_2:
+    cmp al, 1                               ; is the wall above??
+    je  v_wall_collision_upY                ; check up condition
 
+v_wall_collision_downY:
+    cmp word [playerY], cx                  ; compare the player y position with the wall length
+    jl return_wall_collision                ; if player is above the wall's y position, then return
+    jmp kill_player                         ; otherwise, game over               
 
-win: db 'Ha ganado!',0
-restart: db 'Reiniciar el juego [R]', 0
-exit: db 'Salir al menu [ESC]', 0
-welcome: db 'Bienvenido a Mobile Maze!', 0
-confirmation: db 'Presione ENTER para jugar!', 0
-nombreD: db 'Nombre: ', 0
+v_wall_collision_upY:
+    cmp word [playerY], cx                  ; compare the player y position with the wall length
+    jg  return_wall_collision               ; if player is under the wall's y position, then return
+    jmp kill_player                         ; kill the player
+
+kill_player:
+    mov byte [playerSpeedX], 0              ; disable player speed
+    mov byte [playerX], 4                   ; reset the player's x position
+
+return_wall_collision:
+    ret                                     ; return of the procedure
+
+; procedure to read a single sector from USB flash drive
+read_sector:
+    mov ah, 0x02                ; BIOS code to READ from storage device
+    mov al, 1                   ; how many sectors to read
+    mov ch, 0                   ; specify celinder
+    mov dh, 0                   ; specify head
+    mov dl, 0x80                ; specify HDD code
+    int 0x13                    ; read the sector from USB flash drive
+    jc .error                   ; if failed to read the sector handle the error
+    ret                         ; return from procedure
+    
+    .error:
+        jmp $                   ; stuck here forevevr (infinite loop)
+
+;; variables --------------------------------------------------------------------------------------------
+s1 db 'Failed to read sector from USB!', 10, 13, 0
+s2 db 'Failed to read sector from USB!', 10, 13, 0
+s3 db 'Failed to read sector from USB!', 10, 13, 0
+s4 db 'Failed to read sector from USB!', 10, 13, 0
+s5 db 'Failed to read sector from USB!', 10, 13, 0
+s6 db 'Failed to read sector from USB!', 10, 13, 0
+
+is_game_paused: db 1 
+playerY: dw 10                              ; starting y position for the player
+playerX: dw 4                               ; starting x position for the player
+playerSpeedX: db 0                          ; player x speed              
+playerSpeedY: db 0                          ; player y speed
+                ; flag to notice if the game is paused
 nombre: db 'Jason', 0
-nivel: db ' Nivel:',0
-nivelN: db '1',0
-obstaculos: db ' Obstaculos: ', 0
-obstaculosN: db 0, 0
-comando: db " Comandos: P,R,^,<,>,v", 0
-times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
-dw 0xAA55                       ; set boot signature
+
+;; bootsector padding -----------------------------------------------------------------------------------
+times 1024-($-$$) db 0

@@ -1,0 +1,25 @@
+           ==================================
+                    RAM memory map
+           ==================================
+
+    start           end             size            description
+
+    0x0000_7C00     0x0000_7DFF     512 bytes       bootloader
+    0x0000_7E00     0x0000_7FFF     512 bytes       startmenu
+    0x0000_8000     0x0000_81FF     512 bytes       gameover
+    0x0000_8200     0x0000_85FE     1024 bytes      mobile-maze
+
+
+           ==================================
+               GameOS - floppy image map
+           ==================================
+
+    start           end             size            description
+
+    0x0000_0000     0x0000_01FF     512 bytes       bootloader  (sector 1)
+    0x0000_0200     0x0000_03FF     512 bytes       startmenu   (sector 2)
+    0x0000_0400     0x0000_05FF     512 bytes       gameover    (sector 3)
+    0x0000_0600     0x0000_09FF     1024 bytes      mobile-maze (sector 4, 5)
+
+  
+               

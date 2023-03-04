@@ -1,5 +1,5 @@
 all:
-	nasm -f bin mobile-maze.asm -o mobile-maze.bin
-	qemu-system-i386 -drive file=mobile-maze.bin,index=0,media=disk,format=raw
-	xxd mobile-maze.bin
-	rm -f mobile-maze.bin
+	nasm -f bin shell.asm -o shell.bin
+	qemu-system-i386 -drive file=shell.bin,index=0,media=disk,format=raw
+	xxd shell.bin
+	rm -f shell.bin
