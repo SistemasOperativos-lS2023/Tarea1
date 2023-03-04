@@ -1,5 +1,5 @@
-[bits 16]                                   ; Tell nasm to assemble 16 bit code
-[org 0x7C00]                                ; Tell nasm the code is running at boot sector
+                                  ; Tell nasm to assemble 16 bit code
+org 7c00h                             ; Tell nasm the code is running at boot sector
 
 ;; constants --------------------------------------------------------------------------------------------
 KEY_W equ 0x11                              ; scancode for the W key                         
@@ -24,22 +24,17 @@ game_loop:
     mov cx, 80*25                           ; set up the number of repetitions
     rep stosw                               ; put AX into [es:di] and increment DI
 
-    ; print the name label
-    mov si, nombreD
-    mov di, 1*2
-    call video_string
-
     ; configure the draw wall's common values to save memory space
     mov ah, 0x30                            ; character config: bg -> 0, fg -> F, char -> 0
+    mov byte [wall_direction], 1            ; tell the draw_wall procedure that I want to draw vertical walls
 
     ; Draw V wall # 1          
-    mov bx, 40                              ; starting x position
+    mov bx, 40                              ; starting x position for v wall #1 and #2
     mov dx, 1                               ; starting y position
     mov cl, 10                              ; wall length
     call draw_wall                          ; draw the wall
 
     ;Draw V wall # 2
-    mov bx, 40                              ; starting x position
     mov dx, 14                              ; starting y position
     mov cl, 11                              ; wall length
     call draw_wall                          ; draw the wall
@@ -54,6 +49,19 @@ game_loop:
     mov bx, 156                             ; starting x position
     mov dx, 0                               ; starting y position
     mov cl, 23                              ; wall length
+    call draw_wall                          ; draw the wall
+
+    ; Draw H wall # 1
+    mov byte [wall_direction], 0            ; tell the draw_wall procedure that I want to draw horizontal walls
+    mov bx, 54                              ; starting x position for h wall
+    mov dx, 5                               ; starting y position for h wall
+    mov cl, 18                              ; wall's wide
+    call draw_wall                          ; draw the wall
+
+    ; Draw H wall # 2
+    mov bx, 114                              ; starting x position for h wall
+    mov dx, 14                               ; starting y position for h wall
+    mov cl, 18                              ; wall's wide
     call draw_wall                          ; draw the wall
 
     ; Draw the player on screen
@@ -142,13 +150,7 @@ game_loop:
         jl check_walls_collision             ; if player X position is less than 154, continue to game_tick
         mov byte [playerSpeedX], -4          ; otherwise, invert the player X direction
 
-
-;; procedure to check collision with a specific wallW
-;; providing the wall x position, y position, and wall length
-;; AL register: 1 is the wall is up, 0 is wall is down
-;; BX register: The wall x position
-;; Cx register: The wall length
-
+;; check if player is colliding with any of the walls placed at the screen
 check_walls_collision:
     ;; check collision with V wall # 1
     mov al, 1
@@ -200,22 +202,32 @@ video_string:
     jmp video_string                         ; continue with the next char from the string                      
 .return: ret                                 ; return from procedure             
 
-
 ;; Draw wall procedure -----------------------------------------------------------------------------------
 ;; arguments: AH register, BH register, DX register, CH register
 ;; AH register: The charcter config --> bg:fg:char
 ;; BX register: The wall x position
 ;; DX register: The wall y position
-;; CL register: The wall length
+;; CL register: The wall legth or width
+;; [wall direction]: 1 is the wall is vertical and 0 if the wall is horizontal
+ 
 draw_wall:
-    imul di, dx, 160                             
-    add di, bx
-    .draw_wall_loop:
-        stosw
-        stosw
-        add di, 2*80-4
-        loop .draw_wall_loop
-ret
+    imul di, dx, 160                         ; set the wall's Y posotion from DX register                                            
+    add di, bx                               ; add the wall's X position                             
+    cmp byte [wall_direction], 1             ; compare CH value with 1
+    je .draw_v_wall_loop                     ; if ch is equals to 1, then draw a vertical wall
+
+.draw_h_wall_loop:
+    stosw
+    loop .draw_h_wall_loop
+    ret
+
+.draw_v_wall_loop:
+    stosw
+    stosw
+    add di, 2*80-4
+    loop .draw_v_wall_loop
+    ret
+
 
 
 ;; wall collision procedure ------------------------------------------------------------------------------
@@ -255,9 +267,11 @@ playerX: dw 4                                ; starting x position for the playe
 playerSpeedX: db 0
 playerSpeedY: db 0
 
-nombreD: db 'Nombre: ', 0
-nombre: db 'Jason', 0
+wall_direction: db 1
+;nombreD: db 'Nombre: ', 0
+;nombre: db 'Jason', 0
 
 ;; bootsector padding -----------------------------------------------------------------------------------
-times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
-dw 0xAA55                       ; set boot signature
+times 510-($-$$) db 0
+	db 0x55
+	db 0xaa
