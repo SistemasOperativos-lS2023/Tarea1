@@ -1,27 +1,41 @@
-bits 16   		  	; As we are running in safe mode, we have to work at 16 bits
-org 0x7c00		  	; Set the offset at the BIOS starting location
+org 0x7C00 			; Tell nasm the code is running at boot sector
+
+initialize:
+
+    READ:      EQU 0x02
+    STACK_ADD: EQU 0x6ef0
 
 boot:
-	cli  		  	; Disable interruptions
-	mov si, message	  	; Point SI register to message
-	mov ah, 0x0e  	  	; Set higher bits to the display character command
-	sti		  	; Enable interruptions
+    cli				; Disable interruptions
 
-messageProcessing:
-	lodsb     	  	; Load the character within the AL register, and increment SI
-	cmp al, 0 	  	; Is the AL register a null byte?
-	je stop     	  	; Jump to halt
-	int 0x10  	  	; Trigger video services interrupt
-	jmp messageProcessing 	; Loop again
+    cld 			; Ensure direction flag is cleared (for LODSB)
+    xor ax, ax
+    mov ss, ax
+    mov ds, ax
+    mov es, ax
+    mov sp, STACK_ADD
 
-stop:
-	hlt         	  	; Stop
+    sti				; Enable interruptions
 
-message:
-	db "Wenas wenas!", 0	; Message to display
+    mov ah, READ 		; BIOS read sector function
+    mov al, 1 			; Number of sectors to read
+    mov ch, 0 			; Cylinder number
+    mov dh, 0 			; Head number
+    mov cl, 2 			; Sector number
+    ;mov dl, 0x80 		; Boot drive number
+    mov bx, 0x8000 		; Load sector into address 0x8000
+    int 0x13 			; Interrupt BIOS
+   
+    jmp 0:0x8000		; Go to the initial page 
 
-; Set as booteable
-times 510-($-$$) db 0 	  	; Set 0 to left values 
-	db 0x55			; Write the last 2 bytes at 0xaa and 0x55
-	db 0xaa 		; Write the last 2 bytes at 0xaa and 0x55
-times (1440 * 1024)-($-$$) db 0 ; Set 0 to left values 
+
+times 446-($-$$) db 0
+db 0x80                   ; bootable
+db 0x00, 0x01, 0x00       ; start CHS address
+db 0x17                   ; partition type
+db 0x00, 0x02, 0x00       ; end CHS address
+db 0x00, 0x00, 0x00, 0x00 ; LBA
+db 0x02, 0x00, 0x00, 0x00 ; number of sectors
+
+times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
+dw 0xAA55                       ; set boot signature
