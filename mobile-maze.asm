@@ -1,5 +1,11 @@
-                                  ; Tell nasm to assemble 16 bit code
-org 7c00h                             ; Tell nasm the code is running at boot sector
+[bits 16]                                    ; Tell nasm to assemble 16 bit code
+[org 0x8200]                                 ; Tell nasm the code is running at boot sector
+
+
+
+mov ax, 0                                   ; set ACCUMULATOR REGISTER to 0
+mov ds, ax                                  ; set DATA SEGMENT to 0
+mov es, ax                                  ; set EXTRA SEGMENT to 0
 
 ;; constants --------------------------------------------------------------------------------------------
 KEY_W equ 0x11                              ; scancode for the W key                         
@@ -63,7 +69,7 @@ game_loop:
     call draw_wall                          ; draw the wall
 
     ; Draw the player on screen
-    mov ah, 0xF00                           ; character config: bg -> 0, fg -> F, char -> 0
+    mov ah, 0x010                           ; character config: bg -> 0, fg -> F, char -> 0
     imul di, [playerY], 160                 ; set player y position                                     
     add di, [playerX]                       ; set player x position                  
     stosw                                   ; move AX into [es:di] and increment DI
@@ -128,7 +134,16 @@ game_loop:
         mov byte [playerSpeedY], 0
         mov word [playerX], 4
         mov word [playerY], 10
-        jmp game_tick
+    
+        mov ax, 0X7E0                   ; init the segment
+        mov es, ax                      ; init EXTRA SEGMENT register
+        mov bx, 0                       ; init local offset within the segment
+        mov cl, 2                       ; sector 2 on USB flash drive containing the start menu
+        call read_sector                ; read sector from USB flash drive
+        jmp 0x7E0:0x0000                ; jump to rhe shell executable and run it
+
+
+
 
     ;; pause game
     pause_game:
@@ -275,15 +290,35 @@ kill_player:
 return_wall_collision:
     ret                                     ; return of the procedure
 
+; procedure to read a single sector from USB flash drive
+read_sector:
+    mov ah, 0x02                ; BIOS code to READ from storage device
+    mov al, 1                   ; how many sectors to read
+    mov ch, 0                   ; specify celinder
+    mov dh, 0                   ; specify head
+    mov dl, 0x80                ; specify HDD code
+    int 0x13                    ; read the sector from USB flash drive
+    jc .error                   ; if failed to read the sector handle the error
+    ret                         ; return from procedure
+    
+    .error:
+        jmp $                   ; stuck here forevevr (infinite loop)
+
 ;; variables --------------------------------------------------------------------------------------------
+s1 db 'Failed to read sector from USB!', 10, 13, 0
+s2 db 'Failed to read sector from USB!', 10, 13, 0
+s3 db 'Failed to read sector from USB!', 10, 13, 0
+s4 db 'Failed to read sector from USB!', 10, 13, 0
+s5 db 'Failed to read sector from USB!', 10, 13, 0
+s6 db 'Failed to read sector from USB!', 10, 13, 0
+
+is_game_paused: db 1 
 playerY: dw 10                              ; starting y position for the player
 playerX: dw 4                               ; starting x position for the player
 playerSpeedX: db 0                          ; player x speed              
 playerSpeedY: db 0                          ; player y speed
-is_game_paused: db -1                       ; flag to notice if the game is paused
+                ; flag to notice if the game is paused
 nombre: db 'Jason', 0
 
 ;; bootsector padding -----------------------------------------------------------------------------------
-times 510-($-$$) db 0
-	db 0x55
-	db 0xaa
+times 1024-($-$$) db 0
