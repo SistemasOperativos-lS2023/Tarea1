@@ -66,7 +66,7 @@ video_string:
         lodsb               
         cmp al, 0              
         je .return              
-        mov ah, 0x0F
+        mov ah, 0x07
         stosw             
         jmp video_string          
 
@@ -74,16 +74,16 @@ video_string:
 
 ;Suma un valor determinado 
 sumarObstaculos:
-    mov cl, [obstaculosSuperados]
-    mov dl, [valor]
-    add cl, dl
-    mov [obstaculosSuperados],cx
+    mov cl, [obstaculosSuperados]; Se guarda el valor del dato, que toma de manera decimal cuantos obstaculos superados tiene
+    mov dl, [valor]; En dl se guarda la cantida de muros superados que se le desa agregar
+    add cl, dl ;Se suman los datos 
+    mov [obstaculosSuperados],cl ;Se guarda en memoria el valor decimal de los obstaculos superados
 
 obstaculosSuperadosConversionASQUII:
-    mov cx, [obstaculosSuperados]
-    cmp cx, 9
-    jg convertirAsquiiDosDigitos
-    jmp convertirAsquiiUnDigito
+    mov cx, [obstaculosSuperados] ;
+    cmp cx, 9 ;
+    jg convertirAsquiiDosDigitos ;
+    jmp convertirAsquiiUnDigito ;
 
 
 ;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
@@ -108,8 +108,6 @@ restaUnitariaCronometro:
     mov [controlTiempo],cx
     cmp cx,9
     jl prueba
-
-
 
 ;Se realiza una fucnion para convertir el control del cronometro
 convertirContadorASQII:
@@ -138,9 +136,6 @@ convertirAsquiiUnDigito:
     add cx, 48
     mov [cronometro], cx
     jmp prueba
-
-
-
 
 
 nombreD: db 'Nombre: ', 0
