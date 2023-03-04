@@ -36,7 +36,7 @@ game_loop:
     call video_string
 
     ;Pintando Obstaculos Superados
-    mov si, obstaculosN
+    mov si, obstaculosSuperados
     call video_string
 
     ;Pintando los comandps de; juegos 
@@ -44,7 +44,7 @@ game_loop:
     call video_string
 
     ;Se llama a la funcion de suma unitaria 
-    jmp sumaUnitaria
+    jmp restaUnitariaCronometro
     ;Se pinta el numero actualmente es un cronometro
     prueba:
         mov si, cronometro;
@@ -70,29 +70,62 @@ video_string:
         stosw             
         jmp video_string          
 
-    .return: ret                
+    .return: ret           
 
-;Se realiza una suma unitaria la cual, nos permite el control de la variable cronometro
-sumaUnitaria:
-    mov cx, [control]
-    add cx,1
-    mov [control],cx
-    cmp cx,9
-    jl prueba
-;Se realiza una fucnion para convertir el control del cronometro
-convertirContadorASQII:
-    mov cx,0
-    mov [control],cx 
-    mov cx, [contador]
-    add cx, 1
-    mov [contador], cx
+;Suma un valor determinado 
+sumarObstaculos:
+    mov cl, [obstaculosSuperados]
+    mov dl, [valor]
+    add cl, dl
+    mov [obstaculosSuperados],cx
+
+obstaculosSuperadosConversionASQUII:
+    mov cx, [obstaculosSuperados]
     cmp cx, 9
     jg convertirAsquiiDosDigitos
     jmp convertirAsquiiUnDigito
 
+
+;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
+convertirObstaculosAsquiiDosDigitos:
+    mov ax, [obstaculosSuperados]
+    mov bl, 10
+    div bl
+    add al,48
+    add ah,48
+    mov [obstaculosSuperadosAsquii], ax
+    
+;Si el valor de contador es menor a 9 y  1 digitos
+convertirObstaculosAsquiiUnDigito:
+    add cx, 48
+    mov [obstaculosSuperadosAsquii], cx
+
+
+;Se realiza una suma unitaria la cual, nos permite el control de la variable cronometro
+restaUnitariaCronometro:
+    mov cx, [controlTiempo]
+    add cx,1
+    mov [controlTiempo],cx
+    cmp cx,9
+    jl prueba
+
+
+
+;Se realiza una fucnion para convertir el control del cronometro
+convertirContadorASQII:
+    mov cx,0
+    mov [controlTiempo],cx 
+    mov cx, [contadorCronometro]
+    sub cx, 1
+    mov [contadorCronometro], cx
+    cmp cx, 9
+    jg convertirAsquiiDosDigitos
+    jmp convertirAsquiiUnDigito
+
+
 ;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
 convertirAsquiiDosDigitos:
-    mov ax, [contador]
+    mov ax, [contadorCronometro]
     mov bl, 10
     div bl
     add al,48
@@ -101,7 +134,6 @@ convertirAsquiiDosDigitos:
     jmp prueba 
     
 ;Si el valor de contador es menor a 9 y  1 digitos
-
 convertirAsquiiUnDigito:
     add cx, 48
     mov [cronometro], cx
@@ -115,11 +147,18 @@ nombreD: db 'Nombre: ', 0
 nombre: db 'Jason', 0
 nivel: db ' Nivel:',0
 nivelN: db '1',0
+
 obstaculos: db ' Obstaculos: ', 0
-obstaculosN: db '123', 0
-comando: db " Comandos:P,R,^,<,>,v Contador: ", 0
-control dw 0
-contador dw 0 
+
+obstaculosSuperados: db '', 0
+valor db 0
+obstaculosSuperadosAsquii: dw '' 
+
+comando: db " Comandos:P,R,^,<,>,v Tiempo: ", 0
+
+controlTiempo dw 0
+contadorCronometro dw 30 
 cronometro dw '', 0
+
 times 510 - ($ - $$) db 0       ; fill trainling zeros to get exactly 512 bytes long binary file
 dw 0xAA55                       ; set boot signature
