@@ -72,6 +72,9 @@ jmp initial_menu
 game_init:
     mov word [playerX], 8
     mov word [playerY], 23
+    mov byte [playerSpeedX], 0
+    mov byte [playerSpeedY], 0
+    mov byte [is_game_paused], -1
     
 ;; game loop for the game renderization -----------------------------------------------------------------
 game_loop:
@@ -168,12 +171,22 @@ game_loop:
     cmp ah, KEY_A                           ; A key pressed
     je player_left                          ; process player left
 
-    ;;cmp ah, KEY_L                           ; L key pressed
-    ;;je pause_game                           ; process pause game
+    cmp ah, KEY_L                           ; L key pressed
+    je pause_game                           ; process pause game
 
-    ;;cmp ah, KEY_R                           ; R key pressed
-    ;;je restart_game                         ; process restart game
-               
+    cmp ah, KEY_R                           ; R key pressed
+    je restart_game                         ; process restart game
+
+
+    ;; pause the game
+    pause_game:
+        neg byte [is_game_paused]           ; enable or disable the pause game flag
+        jmp game_tick                       ; continue to the loop
+
+    ;; restart the game
+    restart_game:
+        jmp game_init
+
     ;; after the W key is pressed ------------------------------------------------------------------------
     player_up:
         mov byte [playerSpeedX], 0          ; reset player movement in X axis
@@ -450,11 +463,12 @@ nivelN: db '1',0
 obstaculos: db ' Obstaculos: ', 0
 obstaculosN: db 0, 0
 comando: db " Comandos: P,R,^,<,>,v", 0
-
-is_game_paused: db 0 
+is_game_paused: db -1
 playerY: dw 10                              ; starting y position for the player
 playerX: dw 4                               ; starting x position for the player
 playerSpeedX: db 0                          ; player x speed              
 playerSpeedY: db 0                          ; player y speed
 wall_direction: db 1                        ; to notice if the wall is v or h
+
+level: db 1                       ; 1 for the beginner level and -1 for the advanced level
 times 2048-($-$$) db 0
