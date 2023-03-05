@@ -278,6 +278,27 @@ game_loop:
         call wall_collision
 
 
+        neg byte [wall_direction]                     ; chek for horizontal walls
+        
+        ; chek collision with H wall # 1 at X=30, Y=3, W=10
+        mov bx, 30*2                                 ; wall's x position * 2
+        mov dx, 3                                   ; wall's y position 
+        mov cx, (10-1)*2                             ; (wall's wide - 1) *2
+        call wall_collision
+
+        ; chek collision with H wall # 2 at X=46, Y=24, W=12
+        mov bx, 46*2                                 ; wall's x position * 2
+        mov dx, 24                                   ; wall's y position 
+        mov cx, (12-1)*2                             ; (wall's wide - 1) *2
+        call wall_collision
+
+        ; chek collision with H wall # 3 at X=68, Y=18, W=10
+        mov bx, 68*2                                 ; wall's x position * 2
+        mov dx, 18                                   ; wall's y position 
+        mov cx, (10-1)*2                             ; (wall's wide - 1) *2
+        call wall_collision
+
+
 
 
 
@@ -388,11 +409,22 @@ wall_collision:
             cmp word [playerY], dx          ; compare player and walls's starting y position
             jl .return_wall_collision       ; if player is above the wall's starting y position, return
             add dx, cx                      ; add the wall's length to the wall's starting y point
-            cmp word [playerY], dx           ; compare the player y position with the wall's lower boundary
+            cmp word [playerY], dx          ; compare the player y position with the wall's lower boundary
             jg .return_wall_collision       ; if greater, return
-            jmp .kill_player                 ; otherwise, it's a collision
+            jmp .kill_player                ; otherwise, it's a collision
 
     .horizontal_collision:
+        cmp word [playerY], dx              ; compare player and wall's y position
+        je .check_horizontal_boundaries     ; if equals, check if player is under the wall's wide range
+        jmp .return_wall_collision          ; if not, return
+        
+        .check_horizontal_boundaries:
+            cmp word [playerX], bx          ; compare player and walls's starting x position
+            jl .return_wall_collision       ; if player is above the wall's starting y position, return
+            add bx, cx                      ; add the wall's length to the wall's starting y point
+            cmp word [playerX], bx           ; compare the player y position with the wall's lower boundary
+            jg .return_wall_collision       ; if greater, return
+            jmp .kill_player                 ; otherwise, it's a collision
 
     .kill_player:
         call reset_player_parameters        ; reset player position and movement values
