@@ -141,6 +141,44 @@ game_loop:
     mov cx, 80*25                           ; set up the number of repetitions
     rep stosw                               ; put AX into [es:di] and increment DI
 
+    ; pintar el nombre
+    mov si, nombreD
+    mov di, 1*2
+    call video_string2
+
+    mov si, nombre
+    call video_string2
+
+    mov si, nivel
+    mov di, 80*2
+    call video_string2
+
+    mov si, nivelN
+    call video_string2
+
+    mov si, obstaculos
+    mov di, 160*2
+    call video_string2
+
+    mov si, obstaculosSuperadosAsquii
+    call video_string2
+
+    mov si, comando
+    mov di, 240*2
+    call video_string2
+
+    mov si, pausaYreinicio
+    mov di, 321*2
+    call video_string2
+
+    mov si, DerechaIzquierda
+    mov di, 401*2
+    call video_string2
+
+    mov si, arribaAbajo
+    mov di, 481*2
+    call video_string2
+
     ; configure the draw wall's common values to save memory space
     mov ah, 0x90                            ; character config: bg -> 0, fg -> F, char -> 0
 
@@ -332,6 +370,7 @@ game_loop:
 
     ;; restart the game
     restart_game:
+        mov byte [nivelN],49
         mov byte [level], 1
         jmp game_init
 
@@ -396,10 +435,12 @@ game_loop:
         cmp byte [level], -1
         je go_advanced_level
         neg byte [level]
+        add byte [nivelN],1     
         jmp game_init
 
         go_advanced_level:
             mov byte [level], 1
+            mov byte [nivelN], 49
             jmp game_won
 
     ;; verify the current level
@@ -610,6 +651,17 @@ video_string:
         jmp video_string          
 
     .return: ret  
+
+video_string2:
+    xor ax, ax            
+    .next_char:
+        lodsb               
+        cmp al, 0              
+        je .return              
+        mov ah, 0x20
+        stosw             
+        jmp video_string2          
+    .return: ret  
 ;; ******************************************************************************************************
 
 ;; ******************************************************************************************************
@@ -717,16 +769,29 @@ confirmation: db 'Presione ENTER para jugar!', 0
 nombreD: db 'Nombre: ', 0
 nombre: db 'Jason', 0
 nivel: db ' Nivel:',0
-nivelN: db '1',0
+nivelN: db 49,0
+
 obstaculos: db ' Obstaculos: ', 0
-obstaculosN: db 0, 0
-comando: db " Comandos: P,R,^,<,>,v", 0
+ObstaculosSuperados: db 0, 0
+valor db 0
+obstaculosSuperadosAsquii: dw '',0
+
+comando: db " Comandos:", 0
+pausaYreinicio: db 'Pausa:L, Reinicio: R',0
+arribaAbajo: db 'Arriaba: W, Abajao: S',0
+DerechaIzquierda: db 'Izquierda: A, Derecha:D',0
+
 is_game_paused: db -1
 playerY: dw 10                              ; starting y position for the player
 playerX: dw 4                               ; starting x position for the player
 playerSpeedX: db 0                          ; player x speed              
 playerSpeedY: db 0                          ; player y speed
-wall_direction: db 1                        ; to notice if the wall is v or h
+wall_direction: db 1   
+
+
+controlTiempo dw 0
+contadorCronometro dw 30 
+cronometro dw '', 0                     ; to notice if the wall is v or h
 
 level: db 1                       ; 1 for the beginner level and -1 for the advanced level
 times 2048-($-$$) db 0

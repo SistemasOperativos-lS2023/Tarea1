@@ -1,8 +1,8 @@
-# assemble bootloader
-nasm -f bin bootloader.asm -o bootloader.bin
-
 # assemble game
 nasm -f bin mobile-maze.asm -o mobile-maze.bin
+
+# assemble bootloader
+nasm -f bin bootloader.asm -o bootloader.bin
 
 # generate floppy image (2880 - 5 sectors used = 2875)
 dd if=/dev/zero of=floppy.bin count=2875 bs=512
