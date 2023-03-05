@@ -69,6 +69,63 @@ initial_menu:
 jmp initial_menu
 ;; -------------------------------------------------------------------------------------------------------
 
+
+;; game won loop -----------------------------------------------------------------------------------------
+game_won:
+    ; Poner pantalla en color negro
+    xor ax, ax
+    xor di, di
+    mov cx, 80*25
+    rep stosw
+
+    mov si, win 
+    mov di, 160*8+70    ;160 espacios*no.linea + offset
+    call color_video_string
+
+    mov si, restart
+    mov di, 160*20+20
+    call video_string
+
+    mov si, exit
+    mov di, 160*20+100
+    call video_string
+    
+    ; Delay
+    mov bx, [0x046C]
+    add bx, 0x0b
+    .delay:
+        cmp [0x046C], bx
+        jl .delay
+
+    get_player_input:
+		;; Get Player input
+		mov ah, 1			; BIOS get keyboard status int 16h AH 01h
+		int 16h
+		jz game_won		; No key entered, don't check, move on
+
+		cbw					; Zero out AH in 1 byte
+		int 16h				; BIOS get keystroke, scancode in AH, character in AL
+			
+		cmp ah, KEY_ESC		; Check what key user entered...
+		je esc_pressed
+		cmp ah, KEY_R
+		je r_pressed
+
+		jmp game_won		; Otherwise user entered some other key, move on, don't worry about it
+
+	;; Salir --> ir al menú inicial
+	esc_pressed:
+		jmp initial_menu
+
+	;; Reset game to initial state
+	r_pressed:
+        mov byte [level], 1
+        jmp game_init   ;(?)
+		;int 19h			; Reloads the bootsector (in QEMU)
+
+    jmp game_won
+;; -----------------------------------------------------------------------------------------------------------
+
 game_init:
     mov word [playerX], 8
     mov word [playerY], 23
@@ -79,17 +136,18 @@ game_init:
 ;; beginner level for the game renderization -----------------------------------------------------------------
 game_loop:
     ; clear the screen with black
-    mov ax, 0xFFFF                          ; set up a white background and black foreground
+    mov ax, 0x2220                          ; set up a white background and black foreground
     xor di, di                              ; clear the DI register
     mov cx, 80*25                           ; set up the number of repetitions
     rep stosw                               ; put AX into [es:di] and increment DI
 
     ; configure the draw wall's common values to save memory space
-    mov ah, 0x80                            ; character config: bg -> 0, fg -> F, char -> 0
+    mov ah, 0x90                            ; character config: bg -> 0, fg -> F, char -> 0
 
     mov byte [wall_direction], 1            ; I wanto ton draw vertical walls
     cmp byte [level], -1                        ; compare the level with -1
     je draw_walls_advanced                      ; if equals, render level 2
+    
 
     draw_walls_beginner:
         ; Draw V wall # 1 at X=26, Y=0, L=10          
@@ -122,7 +180,6 @@ game_loop:
         call draw_wall                          ; draw the wall
 
         ; Draw V wall # 6 at X=78, Y=12, L=13
-        mov bx, 78*2                             ; starting x position
         mov dx, 12                               ; starting y position
         mov cl, 13                              ; wall length
         call draw_wall                          ; draw the wall
@@ -180,7 +237,6 @@ game_loop:
         call draw_wall                          ; draw the wall
 
         ; Draw V wall # 6 at X=78, Y=22, L=3
-        mov bx, 78*2                             ; starting x position
         mov dx, 22                               ; starting y position
         mov cl, 3                              ; wall length
         call draw_wall                          ; draw the wall
@@ -200,7 +256,6 @@ game_loop:
         call draw_wall                          ; draw the wall
 
         ; Draw H wall # 3 at X=26, Y=12, W=12
-        mov bx, 26*2                             ; starting x position
         mov dx, 12                               ; starting y position
         mov cl, 12                              ; wall length
         call draw_wall                          ; draw the wall
@@ -292,7 +347,7 @@ game_loop:
         mov byte [playerSpeedY], 1          ; inverti direction of movement
         jmp move_player                     ; move the player
 
-    ;; after the D key is pressed
+    ;; after the D key is presseX=64, Y=1, W=10d
     player_right:
         mov byte [playerSpeedY], 0          ; reset player movement in Y axis
         mov byte [playerSpeedX], 4          ; inverti direction of movement
@@ -335,10 +390,17 @@ game_loop:
     ;; check right collision
     ;; This is the winning level checkpoint
     check_right_collision:
-        cmp word [playerX], 154             ; compare player X position with 2
+        cmp word [playerX], 80*2             ; compare player X position with 2
         jl  check_wall_collisions                     ; if player X position is less than 154, continue to game_tick
-        mov byte [playerSpeedX], -4         ; otherwise, invert the player X direction
+        
+        cmp byte [level], -1
+        je go_advanced_level
+        neg byte [level]
+        jmp game_init
 
+        go_advanced_level:
+            mov byte [level], 1
+            jmp game_won
 
     ;; verify the current level
     check_wall_collisions:
@@ -536,7 +598,7 @@ game_delay:
 ;; ******************************************************************************************************
 
 ;; ******************************************************************************************************
-;; procedure to cprint a string on screen
+;; procedure to print a string on screen
 video_string:
     xor ax, ax            
     .next_char:
@@ -551,10 +613,26 @@ video_string:
 ;; ******************************************************************************************************
 
 ;; ******************************************************************************************************
+;; procedure to process color video string
+color_video_string:
+    xor ax, ax            
+    .color_next_char:
+        lodsb               
+        cmp al, 0              
+        je .return
+        mov ah, [drawColor]
+        add byte [drawColor], 10h		; Move to next VGA color     
+        stosw   
+        jmp color_video_string          
+
+    .return: ret    
+;; ******************************************************************************************************
+
+;; ******************************************************************************************************
 ;; procedure to reset player position and movement
 reset_player_parameters:
     mov word [playerX], 4                   ; reset player's x position
-    mov word [playerY], 10                  ; reset player's y position
+    mov word [playerY], 23                  ; reset player's y position
     mov byte [playerSpeedX], 0              ; cancel player's x movement
     mov byte [playerSpeedY], 0              ; cancel player's y movement
     ret
@@ -650,5 +728,5 @@ playerSpeedX: db 0                          ; player x speed
 playerSpeedY: db 0                          ; player y speed
 wall_direction: db 1                        ; to notice if the wall is v or h
 
-level: db -1                       ; 1 for the beginner level and -1 for the advanced level
+level: db 1                       ; 1 for the beginner level and -1 for the advanced level
 times 2048-($-$$) db 0
