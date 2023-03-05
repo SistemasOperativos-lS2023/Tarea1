@@ -76,7 +76,7 @@ game_init:
     mov byte [playerSpeedY], 0
     mov byte [is_game_paused], -1
     
-;; game loop for the game renderization -----------------------------------------------------------------
+;; beginner level for the game renderization -----------------------------------------------------------------
 game_loop:
     ; clear the screen with black
     mov ax, 0xFFFF                          ; set up a white background and black foreground
@@ -86,72 +86,165 @@ game_loop:
 
     ; configure the draw wall's common values to save memory space
     mov ah, 0x80                            ; character config: bg -> 0, fg -> F, char -> 0
+
     mov byte [wall_direction], 1            ; I wanto ton draw vertical walls
+    cmp byte [level], -1                        ; compare the level with -1
+    je draw_walls_advanced                      ; if equals, render level 2
 
-    ; Draw V wall # 1 at X=26, Y=0, L=10          
-    mov bx, 26*2                            ; starting x position for v wall #1 and #2
-    mov dx, 0                               ; starting y position
-    mov cl, 10                              ; wall length
-    call draw_wall                          ; draw the wall
+    draw_walls_beginner:
+        ; Draw V wall # 1 at X=26, Y=0, L=10          
+        mov bx, 26*2                            ; starting x position for v wall #1 and #2
+        mov dx, 0                               ; starting y position
+        mov cl, 10                              ; wall length
+        call draw_wall                          ; draw the wall
 
-    ; Draw V wall # 2 at X=26, Y=12, L=13
-    mov dx, 12                              ; starting y position
-    mov cl, 13                              ; wall length
-    call draw_wall                          ; draw the wall
+        ; Draw V wall # 2 at X=26, Y=12, L=13
+        mov dx, 12                              ; starting y position
+        mov cl, 13                              ; wall length
+        call draw_wall                          ; draw the wall
 
-    ; Draw V wall # 3 at X=42, Y=2, L=21
-    mov bx, 42*2                            ; starting x position
-    mov dx, 2                               ; starting y position
-    mov cl, 21                              ; wall length
-    call draw_wall                          ; draw the wall
+        ; Draw V wall # 3 at X=42, Y=2, L=21
+        mov bx, 42*2                            ; starting x position
+        mov dx, 2                               ; starting y position
+        mov cl, 21                              ; wall length
+        call draw_wall                          ; draw the wall
 
-    ; Draw V wall # 4 at X=62, Y=0, L=24
-    mov bx, 62*2                             ; starting x position
-    mov dx, 0                               ; starting y position
-    mov cl, 24                              ; wall length
-    call draw_wall                          ; draw the wall
+        ; Draw V wall # 4 at X=62, Y=0, L=24
+        mov bx, 62*2                             ; starting x position
+        mov dx, 0                               ; starting y position
+        mov cl, 24                              ; wall length
+        call draw_wall                          ; draw the wall
 
-    ; Draw V wall # 5 at X=78, Y=0, L=11
-    mov bx, 78*2                             ; starting x position
-    mov dx, 0                               ; starting y position
-    mov cl, 11                              ; wall length
-    call draw_wall                          ; draw the wall
+        ; Draw V wall # 5 at X=78, Y=0, L=11
+        mov bx, 78*2                             ; starting x position
+        mov dx, 0                               ; starting y position
+        mov cl, 11                              ; wall length
+        call draw_wall                          ; draw the wall
 
-    ; Draw V wall # 6 at X=78, Y=12, L=13
-    mov bx, 78*2                             ; starting x position
-    mov dx, 12                               ; starting y position
-    mov cl, 13                              ; wall length
-    call draw_wall                          ; draw the wall
+        ; Draw V wall # 6 at X=78, Y=12, L=13
+        mov bx, 78*2                             ; starting x position
+        mov dx, 12                               ; starting y position
+        mov cl, 13                              ; wall length
+        call draw_wall                          ; draw the wall
 
-    ;; common set up for H walls
-    mov byte [wall_direction], -1            ; I wanto ton draw horzontal walls
-    ; Draw H wall # 1 at X=30, Y=3, W=10
-    mov bx, 30*2                             ; starting x position
-    mov dx, 3                               ; starting y position
-    mov cl, 10                              ; wall length
-    call draw_wall                          ; draw the wall
+        ;; common set up for H walls
+        mov byte [wall_direction], -1            ; I wanto ton draw horzontal walls
+        ; Draw H wall # 1 at X=30, Y=3, W=10
+        mov bx, 30*2                             ; starting x position
+        mov dx, 3                               ; starting y position
+        mov cl, 10                              ; wall length
+        call draw_wall                          ; draw the wall
 
-    ; Draw H wall # 2 at X=46, Y=24, W=12
-    mov bx, 46*2                            ; starting x position
-    mov dx, 24                               ; starting y position
-    mov cl, 12                              ; wall length
-    call draw_wall                          ; draw the wall
+        ; Draw H wall # 2 at X=46, Y=24, W=12
+        mov bx, 46*2                            ; starting x position
+        mov dx, 24                               ; starting y position
+        mov cl, 12                              ; wall length
+        call draw_wall                          ; draw the wall
 
-    ; Draw H wall # 3 at X=68, Y=18, W=10
-    mov bx, 68*2                            ; starting x position
-    mov dx, 18                               ; starting y position
-    mov cl, 10                              ; wall length
-    call draw_wall                          ; draw the wall
+        ; Draw H wall # 3 at X=68, Y=18, W=10
+        mov bx, 68*2                            ; starting x position
+        mov dx, 18                               ; starting y position
+        mov cl, 10                              ; wall length
+        call draw_wall                          ; draw the wall
+        jmp draw_player                         ; skip thea advanced level and continue
 
-    ; Draw the player on screen
-    mov ah, 0x010                           ; character config: bg -> 0, fg -> F, char -> 0
-    imul di, [playerY], 160                 ; set player y position                                     
-    add di, [playerX]                       ; set player x position                  
-    stosw                                   ; move AX into [es:di] and increment DI
-    stosw                                   ; move AX into [es:di] and increment DI
-    add di, 2*80-4                          ; move a row down
+        
+    draw_walls_advanced:
+        ; Draw V wall # 1 at X=26, Y=0, L=10          
+        mov bx, 26*2                            ; starting x position for v wall #1 and #2
+        mov dx, 0                               ; starting y position
+        mov cl, 10                              ; wall length
+        call draw_wall                          ; draw the wall
 
-  ; get player input
+        ; Draw V wall # 2 at X=26, Y=11, L=14
+        mov dx, 11                              ; starting y position
+        mov cl, 14                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw V wall # 3 at X=42, Y=1, L=23
+        mov bx, 42*2                            ; starting x position
+        mov dx, 1                               ; starting y position
+        mov cl, 23                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw V wall # 4 at X=62, Y=1, L=24
+        mov bx, 62*2                             ; starting x position
+        mov dx, 1                               ; starting y position
+        mov cl, 24                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw V wall # 5 at X=78, Y=0, L=21
+        mov bx, 78*2                             ; starting x position
+        mov dx, 0                               ; starting y position
+        mov cl, 21                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw V wall # 6 at X=78, Y=22, L=3
+        mov bx, 78*2                             ; starting x position
+        mov dx, 22                               ; starting y position
+        mov cl, 3                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ;; common set up for H walls
+        mov byte [wall_direction], -1            ; I wanto ton draw horzontal walls
+        ; Draw H wall # 1 at X=30, Y=3, W=12
+        mov bx, 30*2                             ; starting x position
+        mov dx, 3                               ; starting y position
+        mov cl, 12                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw H wall # 2 at X=26, Y=8, W=14
+        mov bx, 26*2                             ; starting x position
+        mov dx, 8                               ; starting y position
+        mov cl, 14                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw H wall # 3 at X=26, Y=12, W=12
+        mov bx, 26*2                             ; starting x position
+        mov dx, 12                               ; starting y position
+        mov cl, 12                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw H wall # 4 at X=32, Y=18, W=10
+        mov bx, 32*2                             ; starting x position
+        mov dx, 18                               ; starting y position
+        mov cl, 10                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw H wall # 5 at X=42, Y=23, W=15
+        mov bx, 42*2                             ; starting x position
+        mov dx, 23                               ; starting y position
+        mov cl, 15                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw H wall # 6 at X=48, Y=1, W=14
+        mov bx, 48*2                             ; starting x position
+        mov dx, 1                               ; starting y position
+        mov cl, 14                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw H wall # 7 at X=64, Y=1, W=10
+        mov bx, 64*2                             ; starting x position
+        mov dx, 1                               ; starting y position
+        mov cl, 10                              ; wall length
+        call draw_wall                          ; draw the wall
+
+        ; Draw H wall # 8 at X=68, Y=10, W=12
+        mov bx, 68*2                             ; starting x position
+        mov dx, 10                               ; starting y position
+        mov cl, 12                              ; wall length
+        call draw_wall                          ; draw the wall
+
+    ; Draw the player on screen ----------------------------------------------------------------------------
+    draw_player:
+        mov ah, 0x010                           ; character config: bg -> 0, fg -> F, char -> 0
+        imul di, [playerY], 160                 ; set player y position                                     
+        add di, [playerX]                       ; set player x position                  
+        stosw                                   ; move AX into [es:di] and increment DI
+        stosw                                   ; move AX into [es:di] and increment DI
+        add di, 2*80-4                          ; move a row down
+
+  ; get player input ----------------------------------------------------------------------------------------
     mov ah, 1                               ; BIOS get keyboard status
     int 0x16                                ; systemcall
     jz move_player                            ; No key entered, don't check, move on
@@ -177,17 +270,17 @@ game_loop:
     cmp ah, KEY_R                           ; R key pressed
     je restart_game                         ; process restart game
 
-
-    ;; pause the game
+    ;; pause the game -------------------------------------------------------------------------------------
     pause_game:
         neg byte [is_game_paused]           ; enable or disable the pause game flag
         jmp game_tick                       ; continue to the loop
 
     ;; restart the game
     restart_game:
+        mov byte [level], 1
         jmp game_init
 
-    ;; after the W key is pressed ------------------------------------------------------------------------
+    ;; after the W key is pressed -------------------------------------------------------------------------
     player_up:
         mov byte [playerSpeedX], 0          ; reset player movement in X axis
         mov byte [playerSpeedY], -1         ; invert direction of movement
@@ -247,74 +340,165 @@ game_loop:
         mov byte [playerSpeedX], -4         ; otherwise, invert the player X direction
 
 
-    ;; check vertical walls collisions  ----------------------------------------------------------------
-   
-
-
+    ;; verify the current level
     check_wall_collisions:
         mov byte [wall_direction], 1                ; chek for vertical walls
+        cmp byte [level], -1                        ; compare the level with -1
+        je check_wall_collisions_advanced                      ; if equals, render level 2
 
-        ;;  check collision with V wall # 1 at X=26, Y=0, L=10
-        mov bx, 26*2                                 ; wall's x position * 2
-        mov dx, 0                                   ; wall's y position 
-        mov cx, 10-1                                  ; wall's length - 1
-        call wall_collision
+        ;; check walls collisions beginner ----------------------------------------------------------------
+        check_wall_collisions_beginner:
+            ;;  check collision with V wall # 1 at X=26, Y=0, L=10
+            mov bx, 26*2                                 ; wall's x position * 2
+            mov dx, 0                                   ; wall's y position 
+            mov cx, 10-1                                  ; wall's length - 1
+            call wall_collision
 
-        ; chek collision with V wall # 2 at X=26, Y=12, L=13
-        mov bx, 26*2                                 ; wall's x position * 2
-        mov dx, 12                                   ; wall's y position 
-        mov cx, 13-1                                  ; wall's length - 1
-        call wall_collision
+            ; chek collision with V wall # 2 at X=26, Y=12, L=13
+            mov bx, 26*2                                 ; wall's x position * 2
+            mov dx, 12                                   ; wall's y position 
+            mov cx, 13-1                                  ; wall's length - 1
+            call wall_collision
 
-        ; chek collision with V wall # 3 at X=42, Y=2, L=21
-        mov bx, 42*2                                 ; wall's x position * 2
-        mov dx, 2                                   ; wall's y position 
-        mov cx, 21-1                                  ; wall's length - 1
-        call wall_collision
+            ; chek collision with V wall # 3 at X=42, Y=2, L=21
+            mov bx, 42*2                                 ; wall's x position * 2
+            mov dx, 2                                   ; wall's y position 
+            mov cx, 21-1                                  ; wall's length - 1
+            call wall_collision
 
-        ; chek collision with V wall # 4 at X=62, Y=0, L=24
-        mov bx, 62*2                                 ; wall's x position * 2
-        mov dx, 0                                   ; wall's y position 
-        mov cx, 24-1                                  ; wall's length - 1
-        call wall_collision
+            ; chek collision with V wall # 4 at X=62, Y=0, L=24
+            mov bx, 62*2                                 ; wall's x position * 2
+            mov dx, 0                                   ; wall's y position 
+            mov cx, 24-1                                  ; wall's length - 1
+            call wall_collision
 
-        ; chek collision with V wall # 5 at X=78, Y=0, L=11
-        mov bx, 78*2                                 ; wall's x position * 2
-        mov dx, 0                                   ; wall's y position 
-        mov cx, 11-1                                  ; wall's length - 1
-        call wall_collision
+            ; chek collision with V wall # 5 at X=78, Y=0, L=11
+            mov bx, 78*2                                 ; wall's x position * 2
+            mov dx, 0                                   ; wall's y position 
+            mov cx, 11-1                                  ; wall's length - 1
+            call wall_collision
 
-        ; chek collision with V wall # 6 at X=78, Y=12, L=13
-        mov bx, 78*2                                 ; wall's x position * 2
-        mov dx, 12                                   ; wall's y position 
-        mov cx, 13-1                                  ; wall's length - 1
-        call wall_collision
+            ; chek collision with V wall # 6 at X=78, Y=12, L=13
+            mov bx, 78*2                                 ; wall's x position * 2
+            mov dx, 12                                   ; wall's y position 
+            mov cx, 13-1                                  ; wall's length - 1
+            call wall_collision
+            
+            neg byte [wall_direction]                     ; chek for horizontal walls
+            
+            ; chek collision with H wall # 1 at X=30, Y=3, W=10
+            mov bx, 30*2                                 ; wall's x position * 2
+            mov dx, 3                                   ; wall's y position 
+            mov cx, (10-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
 
+            ; chek collision with H wall # 2 at X=46, Y=24, W=12
+            mov bx, 46*2                                 ; wall's x position * 2
+            mov dx, 24                                   ; wall's y position 
+            mov cx, (12-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
 
-        neg byte [wall_direction]                     ; chek for horizontal walls
-        
-        ; chek collision with H wall # 1 at X=30, Y=3, W=10
-        mov bx, 30*2                                 ; wall's x position * 2
-        mov dx, 3                                   ; wall's y position 
-        mov cx, (10-1)*2                             ; (wall's wide - 1) *2
-        call wall_collision
+            ; chek collision with H wall # 3 at X=68, Y=18, W=10
+            mov bx, 68*2                                 ; wall's x position * 2
+            mov dx, 18                                   ; wall's y position 
+            mov cx, (10-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
 
-        ; chek collision with H wall # 2 at X=46, Y=24, W=12
-        mov bx, 46*2                                 ; wall's x position * 2
-        mov dx, 24                                   ; wall's y position 
-        mov cx, (12-1)*2                             ; (wall's wide - 1) *2
-        call wall_collision
+            ; chek collision with V wall # 4 at X=62, Y=0, L=24
+            mov bx, 62*2                                 ; wall's x position * 2
+            mov dx, 0                                   ; wall's y position 
+            mov cx, 24-1                                  ; wall's length - 1
+            call wall_collision
 
-        ; chek collision with H wall # 3 at X=68, Y=18, W=10
-        mov bx, 68*2                                 ; wall's x position * 2
-        mov dx, 18                                   ; wall's y position 
-        mov cx, (10-1)*2                             ; (wall's wide - 1) *2
-        call wall_collision
+            jmp game_tick
+        ;; check walls collisions advanced ----------------------------------------------------------------
+        check_wall_collisions_advanced:
+            ;;  check collision with V wall # 1 at X=26, Y=0, L=10
+            mov bx, 26*2                                 ; wall's x position * 2
+            mov dx, 0                                   ; wall's y position 
+            mov cx, 10-1                                  ; wall's length - 1
+            call wall_collision
 
+            ; chek collision with V wall # 2 at X=26, Y=11, L=14
+            mov bx, 26*2                                 ; wall's x position * 2
+            mov dx, 11                                   ; wall's y position 
+            mov cx, 14-1                                  ; wall's length - 1
+            call wall_collision
 
+            ; chek collision with V wall # 3 at X=42, Y=1, L=23
+            mov bx, 42*2                                 ; wall's x position * 2
+            mov dx, 1                                   ; wall's y position 
+            mov cx, 23-1                                  ; wall's length - 1
+            call wall_collision
 
+            ; chek collision with V wall # 4 at X=62, Y=1, L=24
+            mov bx, 62*2                                 ; wall's x position * 2
+            mov dx, 1                                   ; wall's y position 
+            mov cx, 24-1                                  ; wall's length - 1
+            call wall_collision
 
+            ; chek collision with V wall # 5 at X=78, Y=0, L=21
+            mov bx, 78*2                                 ; wall's x position * 2
+            mov dx, 0                                   ; wall's y position 
+            mov cx, 21-1                                  ; wall's length - 1
+            call wall_collision
 
+            ; chek collision with V wall # 6 at X=78, Y=22, L=3
+            mov bx, 78*2                                 ; wall's x position * 2
+            mov dx, 22                                   ; wall's y position 
+            mov cx, 3-1                                  ; wall's length - 1
+            call wall_collision
+            
+            neg byte [wall_direction]                     ; chek for horizontal walls
+            
+            ; chek collision with H wall # 1 at X=30, Y=3, W=12
+            mov bx, 30*2                                 ; wall's x position * 2
+            mov dx, 3                                   ; wall's y position 
+            mov cx, (12-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
+
+            ; chek collision with H wall # 2 at X=26, Y=8, W=14
+            mov bx, 26*2                                 ; wall's x position * 2
+            mov dx, 8                                   ; wall's y position 
+            mov cx, (14-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
+         
+            ; chek collision with H wall # 3 at X=26, Y=12, W=12
+            mov bx, 26*2                                 ; wall's x position * 2
+            mov dx, 12                                   ; wall's y position 
+            mov cx, (12-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
+         
+            ; chek collision with H wall # 4 at X=32, Y=18, W=10
+            mov bx, 32*2                                 ; wall's x position * 2
+            mov dx, 18                                   ; wall's y position 
+            mov cx, (10-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
+         
+            ; chek collision with H wall # 5 at X=42, Y=23, W=15
+            mov bx, 42*2                                 ; wall's x position * 2
+            mov dx, 23                                   ; wall's y position 
+            mov cx, (15-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
+                
+            ; chek collision with H wall # 6 at X=48, Y=1, W=14
+            mov bx, 48*2                                 ; wall's x position * 2
+            mov dx, 1                                   ; wall's y position 
+            mov cx, (14-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
+         
+            ; chek collision with H wall # 7 at X=64, Y=1, W=10
+            mov bx, 64*2                                 ; wall's x position * 2
+            mov dx, 1                                   ; wall's y position 
+            mov cx, (10-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
+         
+            ; chek collision with H wall # 8 at X=68, Y=10, W=12
+            mov bx, 68*2                                 ; wall's x position * 2
+            mov dx, 10                                   ; wall's y position 
+            mov cx, (12-1)*2                             ; (wall's wide - 1) *2
+            call wall_collision
+         
     ;; game delay time before rendering the screen's content again
     game_tick:
         mov bx, [0x046C]                        ; load the BIOS timer value into BX
@@ -445,10 +629,6 @@ wall_collision:
     .return_wall_collision:
         ret
 
-
-
-
-
 ;;============== VARIABLES ==============
 drawColor: dw 0F020h
 win: db 'Ha ganado!',0
@@ -470,5 +650,5 @@ playerSpeedX: db 0                          ; player x speed
 playerSpeedY: db 0                          ; player y speed
 wall_direction: db 1                        ; to notice if the wall is v or h
 
-level: db 1                       ; 1 for the beginner level and -1 for the advanced level
+level: db -1                       ; 1 for the beginner level and -1 for the advanced level
 times 2048-($-$$) db 0
