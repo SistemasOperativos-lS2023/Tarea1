@@ -21,6 +21,7 @@ int 0x10                                    ; systemcall
 mov ax, 0xB800                              ; load the video memory address into AX register
 mov es, ax                                  ; move the video memory address into ES register
 
+
 ;;-------------------------------------------------------------------------------------------------------
 initial_menu:
     ; clear the screen with black
@@ -38,21 +39,8 @@ initial_menu:
     mov di, ROWLEN*13+54   ;160 espacios*no.linea + offset
     call video_string
 
-    ;; Draw color borders
-	mov ax, [drawColor]	; White bg, black fg
-	mov di, 0			; Start at 0
-    mov bx, ROWLEN*24
-	mov cl, 40			; cl # of times
-	.draw_borders_loop:
-		stosw
-        add word [drawColor], 1000h		; Move to next VGA color
-        mov ax, [drawColor]	            ; White bg, black fg  
-        mov [es:di], ax   
-        mov [es:bx], ax   
-		add di, 2		                ; Move 2
-        add bx, 4
-		loop .draw_borders_loop	        ; Loops cl # of times
-    
+    call draw_color_borders
+
     ; Delay
     call game_delay
 
@@ -64,7 +52,7 @@ initial_menu:
     cbw					; Zero out AH in 1 byte
     int 16h				; BIOS get keystroke, scancode in AH, character in AL
     cmp ah, KEY_ENTER	; Check what key user entered...
-    je  game_init        ; Go to game
+    je  game_won        ; Go to game
 
 jmp initial_menu
 ;; -------------------------------------------------------------------------------------------------------
@@ -78,9 +66,34 @@ game_won:
     mov cx, 80*25
     rep stosw
 
+    ;Move text horizontally
     mov si, win 
-    mov di, 160*8+70    ;160 espacios*no.linea + offset
-    call color_video_string
+    mov bx, [moveOffsetH]  
+    cmp bx, 60
+    je inc_x
+    jg continue_x  
+    inc_x:
+        add bx, 10
+    continue_x:
+        mov [moveOffsetH], bx
+        mov di, 8*ROWLEN               ; Set row
+        add di, [moveOffsetH]          ; Set offset
+        call video_string 
+
+
+    ;Move text vertically
+    mov si, congrats 
+    mov bx, [moveOffsetV]
+    cmp bx, 10
+    je inc_y
+    jg continue_y
+    inc_y:
+        inc bx
+    continue_y:
+        mov [moveOffsetV], bx
+        imul di, [moveOffsetV], 160         ; Set row
+        add di, 70                          ; Set offset
+        call video_string
 
     mov si, restart
     mov di, 160*20+20
@@ -89,10 +102,35 @@ game_won:
     mov si, exit
     mov di, 160*20+100
     call video_string
-    
+        
+
+    mov cl, 15          ; Length
+    mov di, 6*ROWLEN
+    call draw_H_lines
+
+    mov cl, 15
+    mov di, 6*ROWLEN+100
+    call draw_H_lines
+
+    mov cl, 40
+    mov di, 14*ROWLEN
+    call draw_H_lines
+
+
+    mov cl, 7
+    mov di, 60
+    call draw_V_lines
+
+    mov cl, 7
+    mov di, 100
+    call draw_V_lines
+
+
+    call draw_color_borders 
+
     ; Delay
     mov bx, [0x046C]
-    add bx, 0x0b
+    add bx, 0x05
     .delay:
         cmp [0x046C], bx
         jl .delay
@@ -677,7 +715,40 @@ color_video_string:
         stosw   
         jmp color_video_string          
 
-    .return: ret    
+    .return: ret  
+
+draw_color_borders:
+    ;; Draw color borders
+	mov ax, [drawColor]	; White bg, black fg
+	mov di, 0			; Start at 0
+    mov bx, ROWLEN*24
+	mov cl, 40			; cl # of times
+	.draw_borders_loop:
+		stosw
+        add word [drawColor], 1000h		; Move to next VGA color
+        mov ax, [drawColor]	            ; White bg, black fg  
+        mov [es:di], ax   
+        mov [es:bx], ax   
+		add di, 2		                ; Move 2
+        add bx, 4
+		loop .draw_borders_loop	        ; Loops cl # of times
+    ret  
+
+draw_H_lines:
+	mov ax, [drawColor]	; White bg, black fg
+	.draw_H_lines_loop:
+		stosw 
+		add di, 2		                ; Move 2
+		loop .draw_H_lines_loop	        ; Loops cl # of times
+    ret  
+
+draw_V_lines:
+	mov ax, [drawColor]	; White bg, black fg
+	.draw_V_lines_loop:
+		stosw
+		add di, ROWLEN-2		; Only draw every other row and subtract off extra word
+		loop .draw_V_lines_loop	; Loops CX # of times
+
 ;; ******************************************************************************************************
 
 ;; ******************************************************************************************************
@@ -761,7 +832,10 @@ wall_collision:
 
 ;;============== VARIABLES ==============
 drawColor: dw 0F020h
-win: db 'Ha ganado!',0
+win: db 'Ha ganado!',1,0
+congrats: db "Felicidades!",0
+moveOffsetH: db 0, 0
+moveOffsetV: db 1, 0
 restart: db 'Reiniciar el juego [R]', 0
 exit: db 'Salir al menu [ESC]', 0
 welcome: db 'Bienvenido a Mobile Maze!', 0
