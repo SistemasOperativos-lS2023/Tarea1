@@ -52,7 +52,7 @@ initial_menu:
     cbw					; Zero out AH in 1 byte
     int 16h				; BIOS get keystroke, scancode in AH, character in AL
     cmp ah, KEY_ENTER	; Check what key user entered...
-    je  game_won        ; Go to game
+    je  game_init       ; Go to game
 
 jmp initial_menu
 ;; -------------------------------------------------------------------------------------------------------
