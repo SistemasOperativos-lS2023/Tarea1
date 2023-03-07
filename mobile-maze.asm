@@ -216,7 +216,18 @@ game_loop:
     mov si, arribaAbajo
     mov di, 481*2
     call video_string2
-
+    
+    mov si, timerText
+    mov di, 561*2
+    call video_string2
+    
+    cmp byte [is_game_paused], -1
+    je unit_Rest_Timer
+    
+    draw_Timer:
+        mov si, cronometro;
+        call video_string2
+    
     ; configure the draw wall's common values to save memory space
     mov ah, 0x90                            ; character config: bg -> 0, fg -> F, char -> 0
 
@@ -410,6 +421,7 @@ game_loop:
     restart_game:
         mov byte [nivelN],49
         mov byte [level], 1
+        mov word [contadorCronometro], 20
         jmp game_init
 
     ;; after the W key is pressed -------------------------------------------------------------------------
@@ -445,7 +457,62 @@ game_loop:
         
         mov bl, [playerSpeedY]              ; load the Y speed into BL register
         add [playerY], bl                   ; add the Y speed to the player Y position
+    ;; count passed walls -------------------------------------------------------------------------------
+    ;; When the player x position is greater than 0 but less than 26
+    cmp byte [level], -1
+    je count_obstacles_a
 
+    count_obstacles_b:
+        cmp word [playerX], 26*2               ; compare player x position with 26
+        jg count_obstacles_second_b
+        mov word [obstaculosSuperadosAsquii], '0'
+        jmp check_top_collision
+
+    ;; When the player x position is greater than 26 but less than 42
+    count_obstacles_second_b:
+        cmp word [playerX], 42*2
+        jg count_obstacles_third_b
+        mov word [obstaculosSuperadosAsquii], '2'
+        jmp check_top_collision
+
+    ;; When the player x position is greater than 42 but less than 62
+    count_obstacles_third_b:
+        cmp word [playerX], 62*2
+        jg count_obstacles_fourth_b
+        mov word [obstaculosSuperadosAsquii], '4'
+        jmp check_top_collision
+    
+    ;; When the player x position is greater than 62 but less than 78
+    count_obstacles_fourth_b:
+        mov word [obstaculosSuperadosAsquii], '6'
+        jmp check_top_collision
+
+
+    count_obstacles_a:
+        cmp word [playerX], 26*2               ; compare player x position with 26
+        jg count_obstacles_second_a
+        mov word [obstaculosSuperadosAsquii], '0'
+        jmp check_top_collision
+
+    ;; When the player x position is greater than 26 but less than 42
+    count_obstacles_second_a:
+        cmp word [playerX], 42*2
+        jg count_obstacles_third_a
+        mov word [obstaculosSuperadosAsquii], '2'
+        jmp check_top_collision
+
+    ;; When the player x position is greater than 42 but less than 62
+    count_obstacles_third_a:
+        cmp word [playerX], 62*2
+        jg count_obstacles_fourth_a
+        mov word [obstaculosSuperadosAsquii], '7'
+        jmp check_top_collision
+    
+    ;; When the player x position is greater than 62 but less than 78
+    count_obstacles_fourth_a:
+        mov word [obstaculosSuperadosAsquii], '10'
+   
+    ;;
     ;; check top collision ------------------------------------------------------------------------------
     check_top_collision:
         cmp word [playerY], 0               ; compare player Y position with 1
@@ -473,7 +540,8 @@ game_loop:
         cmp byte [level], -1
         je go_advanced_level
         neg byte [level]
-        add byte [nivelN],1     
+        add byte [nivelN],1
+        mov word [contadorCronometro], 15
         jmp game_init
 
         go_advanced_level:
@@ -758,6 +826,9 @@ reset_player_parameters:
     mov word [playerY], 23                  ; reset player's y position
     mov byte [playerSpeedX], 0              ; cancel player's x movement
     mov byte [playerSpeedY], 0              ; cancel player's y movement
+    mov word [contadorCronometro], 20
+    mov byte [level], 1
+    mov byte [nivelN],49
     ret
 ;; ******************************************************************************************************
 
@@ -826,9 +897,77 @@ wall_collision:
 
     .kill_player:
         call reset_player_parameters        ; reset player position and movement values
+        jmp game_init
 
     .return_wall_collision:
         ret
+unit_Rest_Timer:
+    add word [controlTiempo], 1 ; Se guarda en en cx el controlador del tiempo
+    cmp word [controlTiempo], 9 ;Compara los datos con bueve
+    jl draw_Timer ; Hace un salto cuando cx es igual a nueve
+
+;Se realiza una fucnion para convertir el control del cronometro
+convertirContadorASQII:
+    mov word  [controlTiempo],0 ;El control de tiempo se devuelve a 0
+    sub word [contadorCronometro], 1 ;Se le resta uno 
+    cmp word [contadorCronometro], 9 ; Se compara el valor de cx con 9 
+    jg convertirAsquiiDosDigitos ;Si es mayor a nueve salta a convertir valor de dos digitos
+    jmp convertirAsquiiUnDigito ;Si es menor o o igual a nueve salta a ASQUII de un digito
+
+
+;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
+convertirAsquiiDosDigitos:
+    mov ax, [contadorCronometro] ;Se guarda el valor de contador cronometro 
+    mov bl, 10 ; Se divide el valor de ax en 10
+    div bl
+    add al,48 ;Se le suma 48 al residuo de la division
+    add ah,48 ;Se le suma 48 al resultado de la division
+    mov [cronometro], ax; Se el valor de ax cronometro
+    jmp draw_Timer ;Se hace una salto a prueba
+
+convertirAsquiiUnDigito:
+    mov ax, [contadorCronometro]
+    mov word [cronometro], ax
+    add word [cronometro], 48 ;Se le suma 48 al valor de cronometro
+    cmp word [contadorCronometro], 1
+    je restar_Time
+    jmp draw_Timer ; Se hace una salto a prueba
+
+restar_Time:
+    call reset_player_parameters
+    mov byte [level],1
+    jmp game_loop;
+
+;Suma un valor determinado 
+;sumarObstaculos:
+;    mov cl, [ObstaculosSuperados]; Se guarda el valor del dato, que toma de manera decimal cuantos obstaculos superados tiene
+;    mov dl, [valor]; En dl se guarda la cantida de muros superados que se le desa agregar
+;    add cl, dl ;Se suman los datos 
+;    mov [ObstaculosSuperados],cl ;Se guarda en memoria el valor decimal de los obstaculos superados
+
+;obstaculosSuperadosConversionASQUII:
+;    mov cx, [ObstaculosSuperados] ;Se guardad el valor actual de los obstaculos superados
+;    cmp cx, 9 ;Se compara con nuevo
+;    jg convertirAsquiiDosDigitos ;En caso de que cx sea mayot a nueve se hace un salto para crear asquii para el valor de obstaculos superados
+;    jmp convertirAsquiiUnDigito ;En caso que cx, se igual o menor a nueve saltamos a cerar un asquii para los osbtaculos superados
+
+
+;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
+;convertirObstaculosAsquiiDosDigitos:
+;    mov ax, [ObstaculosSuperados] ;Guardamos el valor de los obstaculos superados en ax
+;    mov bl, 10 ;Dividimos entre 10 el bl
+;    div bl
+;    add al,48 ;Se le suma 48 al cociente de la salida de la division
+;    add ah,48 ;Se le suma 48 al resultado de la division 
+;    mov [obstaculosSuperadosAsquii], ax ;Se guarda el valor de cx en osbtaculos superados
+;    jmp game_loop
+    
+;Si el valor de contador es menor a 9 y  1 digitos
+;convertirObstaculosAsquiiUnDigito:
+;    add cx, 48 ; Se le suma  48 a cx
+;    mov [obstaculosSuperadosAsquii], cx ;Se guarda el valor de cx en osbtaculos superados
+;        jmp game_loop
+
 
 ;;============== VARIABLES ==============
 drawColor: dw 0F020h
@@ -844,17 +983,18 @@ nombreD: db 'Nombre: ', 0
 nombre: db 'Jason', 0
 nivel: db ' Nivel:',0
 nivelN: db 49,0
-
 obstaculos: db ' Obstaculos: ', 0
 ObstaculosSuperados: db 0, 0
 valor db 0
-obstaculosSuperadosAsquii: dw '',0
-
+obstaculosSuperadosAsquii: dw '0',0
+timerText: db 'Cronometro: ',0
+controlTiempo: dw 0
+contadorCronometro: dw 20 
+cronometro: dw '20', 0    
 comando: db " Comandos:", 0
 pausaYreinicio: db 'Pausa:L, Reinicio: R',0
 arribaAbajo: db 'Arriaba: W, Abajao: S',0
 DerechaIzquierda: db 'Izquierda: A, Derecha:D',0
-
 is_game_paused: db -1
 playerY: dw 10                              ; starting y position for the player
 playerX: dw 4                               ; starting x position for the player
@@ -862,10 +1002,6 @@ playerSpeedX: db 0                          ; player x speed
 playerSpeedY: db 0                          ; player y speed
 wall_direction: db 1   
 
-
-controlTiempo dw 0
-contadorCronometro dw 30 
-cronometro dw '', 0                     ; to notice if the wall is v or h
 
 level: db 1                       ; 1 for the beginner level and -1 for the advanced level
 times 2048-($-$$) db 0

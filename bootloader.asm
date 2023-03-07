@@ -21,7 +21,7 @@ boot:
     sti				; Enable interruptions
 
     mov ah, READ 		; BIOS read sector function
-    mov al, 3 			; Number of sectors to read
+    mov al, 4 			; Number of sectors to read
     mov ch, 0 			; Cylinder number
     mov dh, 0 			; Head number
     mov cl, 2 			; Sector number
