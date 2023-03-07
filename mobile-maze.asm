@@ -174,7 +174,7 @@ game_init:
 ;; beginner level for the game renderization -----------------------------------------------------------------
 game_loop:
     ; clear the screen with black
-    mov ax, 0x2220                          ; set up a white background and black foreground
+    mov ax, 0x20                          ; set up a white background and black foreground
     xor di, di                              ; clear the DI register
     mov cx, 80*25                           ; set up the number of repetitions
     rep stosw                               ; put AX into [es:di] and increment DI
@@ -182,51 +182,51 @@ game_loop:
     ; pintar el nombre
     mov si, nombreD
     mov di, 1*2
-    call video_string2
+    call video_string
 
     mov si, nombre
-    call video_string2
+    call video_string
 
     mov si, nivel
     mov di, 80*2
-    call video_string2
+    call video_string
 
     mov si, nivelN
-    call video_string2
+    call video_string
 
     mov si, obstaculos
     mov di, 160*2
-    call video_string2
+    call video_string
 
     mov si, obstaculosSuperadosAsquii
-    call video_string2
+    call video_string
 
     mov si, comando
     mov di, 240*2
-    call video_string2
+    call video_string
 
     mov si, pausaYreinicio
     mov di, 321*2
-    call video_string2
+    call video_string
 
     mov si, DerechaIzquierda
     mov di, 401*2
-    call video_string2
+    call video_string
 
     mov si, arribaAbajo
     mov di, 481*2
-    call video_string2
+    call video_string
     
     mov si, timerText
     mov di, 561*2
-    call video_string2
+    call video_string
     
     cmp byte [is_game_paused], -1
     je unit_Rest_Timer
     
     draw_Timer:
         mov si, cronometro;
-        call video_string2
+        call video_string
     
     ; configure the draw wall's common values to save memory space
     mov ah, 0x90                            ; character config: bg -> 0, fg -> F, char -> 0
@@ -816,7 +816,7 @@ draw_V_lines:
 		stosw
 		add di, ROWLEN-2		; Only draw every other row and subtract off extra word
 		loop .draw_V_lines_loop	; Loops CX # of times
-
+    ret
 ;; ******************************************************************************************************
 
 ;; ******************************************************************************************************
@@ -992,9 +992,9 @@ controlTiempo: dw 0
 contadorCronometro: dw 20 
 cronometro: dw '20', 0    
 comando: db " Comandos:", 0
-pausaYreinicio: db 'Pausa:L, Reinicio: R',0
-arribaAbajo: db 'Arriaba: W, Abajao: S',0
-DerechaIzquierda: db 'Izquierda: A, Derecha:D',0
+pausaYreinicio: db 'Pausa [L], Reinicio [R]',0
+arribaAbajo: db 'Arriba [W], Abajo [S]',0
+DerechaIzquierda: db 'Izquierda [A], Derecha [D]',0
 is_game_paused: db -1
 playerY: dw 10                              ; starting y position for the player
 playerX: dw 4                               ; starting x position for the player
