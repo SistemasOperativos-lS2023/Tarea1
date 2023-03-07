@@ -419,7 +419,62 @@ game_loop:
         
         mov bl, [playerSpeedY]              ; load the Y speed into BL register
         add [playerY], bl                   ; add the Y speed to the player Y position
+    ;; count passed walls -------------------------------------------------------------------------------
+    ;; When the player x position is greater than 0 but less than 26
+    cmp byte [level], -1
+    je count_obstacles_a
 
+    count_obstacles_b:
+        cmp word [playerX], 26*2               ; compare player x position with 26
+        jg count_obstacles_second_b
+        mov word [obstaculosSuperadosAsquii], '0'
+        jmp check_top_collision
+
+    ;; When the player x position is greater than 26 but less than 42
+    count_obstacles_second_b:
+        cmp word [playerX], 42*2
+        jg count_obstacles_third_b
+        mov word [obstaculosSuperadosAsquii], '2'
+        jmp check_top_collision
+
+    ;; When the player x position is greater than 42 but less than 62
+    count_obstacles_third_b:
+        cmp word [playerX], 62*2
+        jg count_obstacles_fourth_b
+        mov word [obstaculosSuperadosAsquii], '4'
+        jmp check_top_collision
+    
+    ;; When the player x position is greater than 62 but less than 78
+    count_obstacles_fourth_b:
+        mov word [obstaculosSuperadosAsquii], '6'
+        jmp check_top_collision
+
+
+    count_obstacles_a:
+        cmp word [playerX], 26*2               ; compare player x position with 26
+        jg count_obstacles_second_a
+        mov word [obstaculosSuperadosAsquii], '0'
+        jmp check_top_collision
+
+    ;; When the player x position is greater than 26 but less than 42
+    count_obstacles_second_a:
+        cmp word [playerX], 42*2
+        jg count_obstacles_third_a
+        mov word [obstaculosSuperadosAsquii], '2'
+        jmp check_top_collision
+
+    ;; When the player x position is greater than 42 but less than 62
+    count_obstacles_third_a:
+        cmp word [playerX], 62*2
+        jg count_obstacles_fourth_a
+        mov word [obstaculosSuperadosAsquii], '7'
+        jmp check_top_collision
+    
+    ;; When the player x position is greater than 62 but less than 78
+    count_obstacles_fourth_a:
+        mov word [obstaculosSuperadosAsquii], '10'
+   
+    ;;
     ;; check top collision ------------------------------------------------------------------------------
     check_top_collision:
         cmp word [playerY], 0               ; compare player Y position with 1
@@ -702,6 +757,7 @@ reset_player_parameters:
     mov byte [playerSpeedY], 0              ; cancel player's y movement
     mov word [contadorCronometro], 20
     mov byte [level], 1
+    mov byte [nivelN],49
     ret
 ;; ******************************************************************************************************
 
@@ -801,7 +857,7 @@ convertirAsquiiDosDigitos:
 convertirAsquiiUnDigito:
     mov ax, [contadorCronometro]
     mov word [cronometro], ax
-    add word [cronometro], 48 ;Se le suma 48 al valor de cx
+    add word [cronometro], 48 ;Se le suma 48 al valor de cronometro
     cmp word [contadorCronometro], 1
     je restar_Time
     jmp draw_Timer ; Se hace una salto a prueba
@@ -810,6 +866,38 @@ restar_Time:
     call reset_player_parameters
     mov byte [level],1
     jmp game_loop;
+
+;Suma un valor determinado 
+;sumarObstaculos:
+;    mov cl, [ObstaculosSuperados]; Se guarda el valor del dato, que toma de manera decimal cuantos obstaculos superados tiene
+;    mov dl, [valor]; En dl se guarda la cantida de muros superados que se le desa agregar
+;    add cl, dl ;Se suman los datos 
+;    mov [ObstaculosSuperados],cl ;Se guarda en memoria el valor decimal de los obstaculos superados
+
+;obstaculosSuperadosConversionASQUII:
+;    mov cx, [ObstaculosSuperados] ;Se guardad el valor actual de los obstaculos superados
+;    cmp cx, 9 ;Se compara con nuevo
+;    jg convertirAsquiiDosDigitos ;En caso de que cx sea mayot a nueve se hace un salto para crear asquii para el valor de obstaculos superados
+;    jmp convertirAsquiiUnDigito ;En caso que cx, se igual o menor a nueve saltamos a cerar un asquii para los osbtaculos superados
+
+
+;Si el valor de contador es mayor a 9 y menor a 99 convertimos en ASQII en 2 digitos
+;convertirObstaculosAsquiiDosDigitos:
+;    mov ax, [ObstaculosSuperados] ;Guardamos el valor de los obstaculos superados en ax
+;    mov bl, 10 ;Dividimos entre 10 el bl
+;    div bl
+;    add al,48 ;Se le suma 48 al cociente de la salida de la division
+;    add ah,48 ;Se le suma 48 al resultado de la division 
+;    mov [obstaculosSuperadosAsquii], ax ;Se guarda el valor de cx en osbtaculos superados
+;    jmp game_loop
+    
+;Si el valor de contador es menor a 9 y  1 digitos
+;convertirObstaculosAsquiiUnDigito:
+;    add cx, 48 ; Se le suma  48 a cx
+;    mov [obstaculosSuperadosAsquii], cx ;Se guarda el valor de cx en osbtaculos superados
+;        jmp game_loop
+
+
 ;;============== VARIABLES ==============
 drawColor: dw 0F020h
 win: db 'Ha ganado!',0
