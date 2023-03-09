@@ -257,7 +257,7 @@ game_loop:
         ; Draw V wall # 4 at X=62, Y=0, L=24
         mov bx, 62*2                             ; starting x position
         mov dx, 0                               ; starting y position
-        mov cl, 24                              ; wall length
+        mov cl, 23                              ; wall length
         call draw_wall                          ; draw the wall
 
         ; Draw V wall # 5 at X=78, Y=0, L=11
@@ -379,7 +379,7 @@ game_loop:
 
     ; Draw the player on screen ----------------------------------------------------------------------------
     draw_player:
-        mov ah, 0x010                           ; character config: bg -> 0, fg -> F, char -> 0
+        mov ah, 0x030                           ; character config: bg -> 0, fg -> F, char -> 0
         imul di, [playerY], 160                 ; set player y position                                     
         add di, [playerX]                       ; set player x position                  
         stosw                                   ; move AX into [es:di] and increment DI
@@ -578,7 +578,7 @@ game_loop:
             ; chek collision with V wall # 4 at X=62, Y=0, L=24
             mov bx, 62*2                                 ; wall's x position * 2
             mov dx, 0                                   ; wall's y position 
-            mov cx, 24-1                                  ; wall's length - 1
+            mov cx, 23-1                                  ; wall's length - 1
             call wall_collision
 
             ; chek collision with V wall # 5 at X=78, Y=0, L=11
